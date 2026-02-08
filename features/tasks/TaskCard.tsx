@@ -28,41 +28,94 @@ const [newPersonEmail, setNewPersonEmail] = useState('');
 const [isAddingPerson, setIsAddingPerson] = useState(false);
 const [personError, setPersonError] = useState<string | null>(null);
 const [isSavingPerson, setIsSavingPerson] = useState(false);
+const [editTitle, setEditTitle] = useState(task.title);
+const [editDescription, setEditDescription] = useState(task.description ?? '');
 
   const [saving, setSaving] = useState(false);
 
 useEffect(() => {
-    setAssigneeEmail(task.assignee_email ?? '');
-    setFollowUpDate(
-      task.follow_up_at
-        ? new Date(task.follow_up_at).toISOString().slice(0, 10)
-        : ''
-    );
-  }, [task.id, task.assignee_email, task.follow_up_at]);
+  setAssigneeEmail(task.assignee_email ?? '');
+  setAssigneeId(task.assignee_id ?? ''); // ÚJ
+  setFollowUpDate(
+    task.follow_up_at
+      ? new Date(task.follow_up_at).toISOString().slice(0, 10)
+      : ''
+  );
+  setEditTitle(task.title);
+  setEditDescription(task.description ?? '');
+}, [
+  task.id,
+  task.assignee_email,
+  task.assignee_id,        // ÚJ
+  task.follow_up_at,
+  task.title,
+  task.description,
+]);
 
-   const handleSave = async () => {
+  const handleSave = async () => {
   setSaving(true);
   try {
-    await updateTaskDetails({
-      id: task.id,
-      assigneeEmail: assigneeEmail.trim() || null,
-      assigneeId: assigneeId || null, // ÚJ
-      followUpAt: followUpDate ? new Date(followUpDate).toISOString() : null,
-    });
+    const updates: any = { id: task.id };
 
-    onUpdated?.({
+    const newTitle = editTitle.trim();
+    const newDescription = editDescription.trim() || null;
+    const newAssigneeEmail = assigneeEmail.trim() || null;
+    const newAssigneeId = assigneeId || null;
+    const newFollowUpAt = followUpDate
+      ? new Date(followUpDate).toISOString()
+      : null;
+
+    if (newTitle !== task.title) {
+      updates.title = newTitle;
+    }
+
+    const originalDescription = task.description ?? '';
+    if (newDescription !== (originalDescription.trim() || null)) {
+      updates.description = newDescription;
+    }
+
+    const originalAssigneeEmail = task.assignee_email ?? '';
+    if (newAssigneeEmail !== (originalAssigneeEmail.trim() || null)) {
+      // FONTOS: snake_case mezőnév
+      updates.assignee_email = newAssigneeEmail;
+    }
+
+    const originalAssigneeId = task.assignee_id ?? null;
+    if (newAssigneeId !== originalAssigneeId) {
+      updates.assignee_id = newAssigneeId;
+    }
+
+    const originalFollowUpDate = task.follow_up_at
+      ? new Date(task.follow_up_at).toISOString()
+      : null;
+    if (newFollowUpAt !== originalFollowUpDate) {
+      updates.follow_up_at = newFollowUpAt;
+    }
+
+    const keys = Object.keys(updates);
+    if (keys.length > 1) {
+      await updateTaskDetails(updates);
+    }
+
+    const updatedTask: Task = {
       ...task,
-      assignee_email: assigneeEmail.trim() || null,
-      assignee_id: assigneeId || null,
-      follow_up_at: followUpDate ? new Date(followUpDate).toISOString() : null,
-    });
+      title: newTitle,
+      description: newDescription,
+      assignee_email: newAssigneeEmail,
+      assignee_id: newAssigneeId,
+      follow_up_at: newFollowUpAt,
+    };
+
+    onUpdated?.(updatedTask);
   } catch (e) {
-    console.error(e);
+    console.error('handleSave error:', e);
   } finally {
     setSaving(false);
   }
 };
-  const handleAddPerson = async () => {
+
+
+const handleAddPerson = async () => {
   setPersonError(null);
 
   if (!newPersonName.trim()) {
@@ -93,6 +146,7 @@ useEffect(() => {
   }
 };
 
+
   useEffect(() => {
   async function loadPeople() {
     try {
@@ -110,9 +164,27 @@ useEffect(() => {
   return (
     <div className="mt-6 rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          Részletek: {task.title}
-        </h2>
+        <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+  <div className="flex-1">
+    <label className="mb-1 block text-xs text-slate-400">
+      Cím
+    </label>
+    <input
+      type="text"
+      value={editTitle}
+      onChange={(e) => setEditTitle(e.target.value)}
+      className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+    />
+  </div>
+  <button
+    type="button"
+    onClick={onClose}
+    className="mt-2 text-xs text-slate-400 hover:text-slate-200 md:mt-0"
+  >
+    Bezárás
+  </button>
+</div>
+
         <button
           type="button"
           onClick={onClose}
@@ -138,24 +210,32 @@ useEffect(() => {
           </span>
         </p>
         <p className="text-xs text-slate-400">
-          Létrehozva:{' '}
-          <span className="text-slate-100">
-            {new Date(task.created_at).toLocaleString('hu-HU')}
-          </span>
-        </p>
-        <p className="text-xs text-slate-400">
-          Utolsó módosítás:{' '}
-          <span className="text-slate-100">
-            {new Date(task.updated_at).toLocaleString('hu-HU')}
-          </span>
-        </p>
+  Létrehozva:{' '}
+  <span className="text-slate-100">
+    {task.created_at
+      ? new Date(task.created_at).toLocaleString('hu-HU')
+      : 'ismeretlen'}
+  </span>
+</p>
+<p className="text-xs text-slate-400">
+  Utolsó módosítás:{' '}
+  <span className="text-slate-100">
+    {task.updated_at
+      ? new Date(task.updated_at).toLocaleString('hu-HU')
+      : 'ismeretlen'}
+  </span>
+</p>
 
                 <div className="pt-2">
-          <p className="text-xs text-slate-400 mb-1">Leírás</p>
-          <div className="rounded border border-slate-800 bg-slate-900 p-2 min-h-[40px]">
-            {task.description ?? 'Még nincs leírás.'}
-          </div>
-        </div>
+  <p className="text-xs text-slate-400 mb-1">Leírás</p>
+  <textarea
+  value={editDescription}
+  onChange={(e) => setEditDescription(e.target.value)}
+  className="w-full rounded border border-slate-800 bg-slate-900 px-2 py-1 text-xs focus:border-sky-500 focus:outline-none min-h-[80px]"
+  placeholder="Rövid leírás a feladatról…"
+/>
+</div>
+
 
         <div className="pt-4 space-y-3">
           <p className="text-xs text-slate-400 font-semibold">
@@ -272,7 +352,7 @@ useEffect(() => {
   onClick={handleSave}
   className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium hover:bg-emerald-500 disabled:opacity-50"
 >
-  {saving ? 'Mentés…' : 'Változások mentése (delegálás / follow-up)'}
+  {saving ? 'Mentés…' : 'Változások mentése (cím / leírás / delegálás / follow-up)'}
 </button>
 
         </div>

@@ -87,15 +87,12 @@ export function AreaTasksClient({ area, tasks }: AreaTasksClientProps) {
                       <p className="text-xs text-slate-400">
                         Terület: {task.area}
                       </p>
+{task.assignee_email && (
+  <p className="text-xs text-slate-400">
+    Felelős: {task.assignee_email}
+  </p>
+)}
 
-                      {anyTask.assignee && (
-                        <p className="text-xs text-slate-400">
-                          Felelős: {anyTask.assignee.name}{' '}
-                          {anyTask.assignee.email
-                            ? `(${anyTask.assignee.email})`
-                            : ''}
-                        </p>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-3 text-xs text-slate-400">

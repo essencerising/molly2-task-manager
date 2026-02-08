@@ -14,18 +14,20 @@ export async function fetchTasks() {
     throw error;
   }
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    title: row.title,
-    status: row.status,
-    area: row.area,
-    description: row.description,
-    assigneeEmail: row.assignee_email,
-    delegatorEmail: row.delegator_email,
-    // DÁTUMOK – ezek kellenek a naptárnak:
-    dueDate: row.due_date,
-    followUpDate: row.follow_up_at,
-  }));
+ return (data ?? []).map((row: any) => ({
+  id: row.id,
+  title: row.title,
+  status: row.status,
+  area: row.area,
+  description: row.description,
+  assigneeEmail: row.assignee_email,
+  delegatorEmail: row.delegator_email,
+  // DÁTUMOK – ezek kellenek a naptárnak:
+  dueDate: row.due_date,
+  followUpDate: row.follow_up_at,
+  created_at: row.created_at ?? null,
+  updated_at: row.updated_at ?? null,
+}));
 }
 
 // ------------------
@@ -50,7 +52,7 @@ export async function createTask(input: CreateTaskInput) {
     description,
     assigneeEmail,
     assigneeId,
-    delegatorEmail, // ÚJ
+    delegatorEmail,
   } = input;
 
   const payload: Partial<Task> = {
@@ -71,7 +73,9 @@ export async function createTask(input: CreateTaskInput) {
     payload.assignee_email = assigneeEmail;
   }
 
-  if (delegatorEmail) payload.delegator_email = delegatorEmail;
+  if (delegatorEmail) {
+    payload.delegator_email = delegatorEmail;
+  }
 
   if (assigneeId) {
     payload.assignee_id = assigneeId as any;
@@ -80,7 +84,7 @@ export async function createTask(input: CreateTaskInput) {
   const { data, error } = await supabase
     .from('tasks')
     .insert(payload)
-    .select()
+    .select('id, title, description, status, area, assignee_email, assignee_id, due_date, follow_up_at, created_at, updated_at')
     .single();
 
   if (error) {
@@ -132,44 +136,52 @@ export async function archiveTask(taskId: string) {
 
 interface UpdateTaskDetailsInput {
   id: string;
+  title?: string;
+  description?: string | null;
   assigneeEmail?: string | null;
-  assigneeId?: string | null;     // ÚJ: people.id
+  assigneeId?: string | null;
   followUpAt?: string | null;
 }
 
 export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
-  const { id, assigneeEmail, assigneeId, followUpAt } = input;
+  const {
+    id,
+    title,
+    description,
+    assigneeEmail,
+    assigneeId,
+    followUpAt,
+  } = input;
 
   const payload: Partial<Task> = {};
 
-  // assignee_email frissítése (ha expliciten megadtuk)
+  if (title !== undefined) {
+    payload.title = title;
+  }
+  if (description !== undefined) {
+    payload.description = description;
+  }
   if (assigneeEmail !== undefined) {
     payload.assignee_email = assigneeEmail;
   }
-
-  // assignee_id frissítése (ha expliciten megadtuk)
   if (assigneeId !== undefined) {
     payload.assignee_id = assigneeId as any;
   }
-
-  // follow_up_at frissítése
   if (followUpAt !== undefined) {
     payload.follow_up_at = followUpAt as any;
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('tasks')
     .update(payload)
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', id); // itt elég a sikeres update, nem kell .single()
 
   if (error) {
+    console.error('updateTaskDetails error', error);
     throw error;
   }
-
-  return data as Task;
 }
+
 // ------------------
 // Distinct area-k lekérése dashboardhoz
 // ------------------

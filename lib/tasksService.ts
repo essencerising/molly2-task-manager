@@ -7,6 +7,7 @@ export async function fetchTasks() {
   const { data, error } = await supabase
     .from('tasks')
     .select('*, assignee:people!tasks_assignee_id_fkey(id, name, email)')
+    .is('archived_at', null) // ← csak NEM archivált feladatok
     .order('created_at', { ascending: false });
 
   if (error) {

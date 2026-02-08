@@ -49,13 +49,29 @@ export default function HomePage() {
     return 'todo';
   };
 
-    const fetchTasks = async () => {
+        const fetchTasks = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await fetchTasksFromService();
-      setTasks(data);
+      const data = await fetchTasksFromService(); // camelCase-es kimenet
+
+      const normalized: Task[] = (data ?? []).map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        status: row.status,
+        area: row.area,
+        description: row.description,
+        assignee_email: row.assigneeEmail,
+        delegator_email: row.delegatorEmail,
+        due_date: row.dueDate,
+        follow_up_at: row.followUpDate,
+        assignee_id: row.assignee_id ?? null,
+        created_at: row.created_at ?? null,
+        updated_at: row.updated_at ?? null,
+      }));
+
+      setTasks(normalized);
     } catch (err) {
       console.error(err);
       setError('Nem sikerült betölteni a feladatokat.');
@@ -63,7 +79,6 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-
     const handleToggleStatus = async (task: Task) => {
     const nextStatus = getNextStatus(task.status);
 

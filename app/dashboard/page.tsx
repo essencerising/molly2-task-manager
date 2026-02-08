@@ -6,6 +6,7 @@ import { DelegatedTasksPanel } from '@/features/dashboard/DelegatedTasksPanel';
 import { UpcomingFollowupsPanel } from '@/features/dashboard/UpcomingFollowupsPanel';
 import { DashboardTasksClient } from '@/features/tasks/DashboardTasksClient';
 
+
 export default async function DashboardPage() {
   const areas = await fetchAreas();
   const tasks = await fetchTasks(); // minden feladat

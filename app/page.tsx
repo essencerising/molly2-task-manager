@@ -5,7 +5,7 @@ import type { Task, TaskArea } from '@/types/tasks';
 import { TaskList } from '../features/tasks/TaskList';
 import { TaskFilters } from '../features/tasks/TaskFilters';
 import { TaskCard } from '../features/tasks/TaskCard';
-import { fetchTasks as fetchTasksFromService, createTask, updateTaskStatus } from '../lib/tasksService';
+import { fetchTasks as fetchTasksFromService, createTask, updateTaskStatus, archiveTask, } from '../lib/tasksService';
 import type { Person } from '@/types/people';
 import { getPeopleByArea, createPerson } from '@/lib/peopleService';
 
@@ -91,7 +91,7 @@ export default function HomePage() {
         )
       );
 
-      // ha a kiválasztott taskot is nézed, ott is érdemes frissíteni
+         // ha a kiválasztott taskot is nézed, ott is érdemes frissíteni
       setSelectedTask((prev) =>
         prev && prev.id === task.id ? { ...prev, status: nextStatus } : prev
       );
@@ -100,6 +100,24 @@ export default function HomePage() {
       setError('Nem sikerült frissíteni a feladat státuszát.');
     }
   };
+
+  const handleArchiveTask = async (task: Task) => {
+  try {
+    // 1) archiválás a DB-ben
+    await archiveTask(task.id);
+
+    // 2) lokális state-ből kivesszük
+    setTasks((prev) => prev.filter((t) => t.id === task.id ? false : true));
+
+    // 3) ha épp meg volt nyitva a TaskCard, zárjuk
+    setSelectedTask((prev) =>
+      prev && prev.id === task.id ? null : prev
+    );
+  } catch (err) {
+    console.error(err);
+    setError('Nem sikerült archiválni a feladatot.');
+  }
+};
 
   useEffect(() => {
   fetchTasks();
@@ -353,6 +371,7 @@ useEffect(() => {
       tasks={filteredTasks}
       onToggleStatus={handleToggleStatus}
       onSelectTask={setSelectedTask}
+      onArchiveTask={handleArchiveTask}
     />
   )}
 

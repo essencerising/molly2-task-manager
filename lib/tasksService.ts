@@ -111,6 +111,20 @@ export async function updateTaskStatus(
   return data as Task;
 }
 
+export async function archiveTask(taskId: string) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('Nem sikerült archiválni a feladatot:', error);
+    throw error;
+  }
+
+  return data;
+}
+
 // ------------------
 // Részletek frissítése (assignee + followUp)
 // ------------------

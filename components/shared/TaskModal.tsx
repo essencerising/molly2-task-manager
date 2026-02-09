@@ -12,13 +12,11 @@ import {
     CheckSquare,
     MessageSquare,
     Paperclip,
-    Trash2,
-    Plus,
-    X,
-    FolderKanban // ÚJ
-} from 'lucide-react';
-import { useWorkspaceStore } from '@/stores'; // ÚJ
+import { X, Calendar, Tag, User, Clock, Repeat, CheckSquare, MessageSquare, Plus, Trash2, ListChecks } from 'lucide-react';
+import { Button, Input, Badge, Modal } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { useWorkspaceStore, useProjectStore } from '@/stores';
+import { fetchSubtasks, createSubtask, toggleSubtask, deleteSubtask, Subtask as SubtaskType } from '@/lib/subtasksService';
 import { toast } from 'sonner';
 
 // Types
@@ -35,19 +33,17 @@ interface Comment {
     created_at: string;
 }
 
-interface TaskData {
-    id: string;
+export interface TaskData {
+    id?: string;
     title: string;
     description?: string;
     status: 'todo' | 'in_progress' | 'done';
     area?: string;
-    due_date?: string;
-    follow_up_at?: string;
-    assignee_id?: string;
-    recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+    due_date?: string | null;
+    follow_up_at?: string | null;
+    recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly';
     recurrence_interval?: number;
-    project_id?: string | null; // ÚJ
-    workspace_id?: string; // ÚJ
+    workspace_id?: string | null; // ÚJ
 }
 
 interface TaskModalProps {
@@ -101,9 +97,16 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             setRecurrenceInterval(task.recurrence_interval || 1);
             setProjectId(task.project_id || '');
 
-            // JAVÍTÁS: Reset subtasks and comments for each task
-            // TODO: Load actual subtasks and comments from database when implemented
-            setSubtasks([]);
+            // Load subtasks from database
+            if (task.id) {
+                fetchSubtasks(task.id)
+                    .then(data => setSubtasks(data))
+                    .catch(err => console.error('Failed to load subtasks:', err));
+            } else {
+                setSubtasks([]);
+            }
+
+            // TODO: Load comments from database
             setComments([]);
         } else {
             // Reset all form fields when task is null
@@ -153,27 +156,51 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
         }
     };
 
-    const handleAddSubtask = () => {
+    const handleAddSubtask = async () => {
         if (!newSubtaskTitle.trim()) return;
+        if (!task?.id) {
+            toast.error('Mentsd el előbb a feladatot!');
+            return;
+        }
 
-        const newSubtask: Subtask = {
-            id: `temp-${Date.now()}`,
-            title: newSubtaskTitle.trim(),
-            is_completed: false,
-        };
-
-        setSubtasks(prev => [...prev, newSubtask]);
-        setNewSubtaskTitle('');
+        try {
+            const newSubtask = await createSubtask({
+                task_id: task.id,
+                title: newSubtaskTitle.trim(),
+            });
+            setSubtasks(prev => [...prev, newSubtask]);
+            setNewSubtaskTitle('');
+            toast.success('Részfeladat hozzáadva');
+        } catch (error) {
+            console.error('Failed to create subtask:', error);
+            toast.error('Hiba a részfeladat létrehozásakor');
+        }
     };
 
-    const handleToggleSubtask = (id: string) => {
-        setSubtasks(prev =>
-            prev.map(st => st.id === id ? { ...st, is_completed: !st.is_completed } : st)
-        );
+    const handleToggleSubtask = async (id: string) => {
+        const subtask = subtasks.find(st => st.id === id);
+        if (!subtask) return;
+
+        try {
+            await toggleSubtask(id, !subtask.is_completed);
+            setSubtasks(prev =>
+                prev.map(st => st.id === id ? { ...st, is_completed: !st.is_completed } : st)
+            );
+        } catch (error) {
+            console.error('Failed to toggle subtask:', error);
+            toast.error('Hiba a részfeladat frissítésekor');
+        }
     };
 
-    const handleDeleteSubtask = (id: string) => {
-        setSubtasks(prev => prev.filter(st => st.id !== id));
+    const handleDeleteSubtask = async (id: string) => {
+        try {
+            await deleteSubtask(id);
+            setSubtasks(prev => prev.filter(st => st.id !== id));
+            toast.success('Részfeladat törölve');
+        } catch (error) {
+            console.error('Failed to delete subtask:', error);
+            toast.error('Hiba a részfeladat törlésekor');
+        }
     };
 
     const handleAddComment = () => {

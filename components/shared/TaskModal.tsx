@@ -14,12 +14,13 @@ import {
     CheckSquare,
     MessageSquare,
     Paperclip,
-import { X, Calendar, Tag, User, Clock, Repeat, CheckSquare, MessageSquare, Plus, Trash2, ListChecks } from 'lucide-react';
-import { Button, Input, Badge, Modal } from '@/components/ui';
+    Trash2,
+    Plus,
+    X,
+    FolderKanban
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useWorkspaceStore, useProjectStore } from '@/stores';
-import { fetchSubtasks, createSubtask, toggleSubtask, deleteSubtask, Subtask as SubtaskType } from '@/lib/subtasksService';
-import { toast } from 'sonner';
+import { useWorkspaceStore } from '@/stores';
 
 // Types
 interface Subtask {

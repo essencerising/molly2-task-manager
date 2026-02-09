@@ -529,5 +529,35 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                 </div>
             </ModalFooter>
         </Modal>
+
+        {/* Delete Confirmation Dialog */ }
+    {
+        showDeleteConfirm && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <div className="bg-slate-800 rounded-lg p-6 max-w-md mx-4 shadow-2xl border border-slate-700">
+                    <h3 className="text-lg font-semibold text-white mb-2">Biztos törölni szeretnéd?</h3>
+                    <p className="text-slate-300 text-sm mb-6">
+                        A feladat archiválásra kerül és később visszakereshető lesz az archívumban.
+                    </p>
+                    <div className="flex gap-3 justify-end">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            className="text-slate-400 hover:text-white"
+                        >
+                            Mégse
+                        </Button>
+                        <Button
+                            onClick={confirmDelete}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Törlés
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+    </>
     );
 }

@@ -23,7 +23,7 @@ import { isSameDay, addDays, isWithinInterval, startOfDay, endOfDay, format } fr
 import { hu } from 'date-fns/locale/hu';
 import { toast } from 'sonner';
 
-type ViewMode = 'list' | 'kanban' | 'calendar';
+type ViewMode = 'list' | 'kanban';
 type FilterType = 'all' | 'today' | 'followup' | 'overdue';
 
 export default function DashboardPage() {
@@ -229,16 +229,6 @@ export default function DashboardPage() {
     return filteredTasks.filter(t => t.status === status);
   };
 
-  // Calendar view - get days
-  const [calendarStart, setCalendarStart] = useState(() => startOfDay(new Date()));
-  const calendarDays = Array.from({ length: 7 }).map((_, i) => {
-    const date = addDays(calendarStart, i);
-    const dayTasks = filteredTasks.filter(t =>
-      t.dueDate && isSameDay(new Date(t.dueDate), date)
-    );
-    return { date, tasks: dayTasks };
-  });
-
   return (
     <DashboardLayout
       title="Dashboard"
@@ -282,25 +272,25 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-2">
             {/* View mode switcher */}
-            <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+            <div className="flex items-center gap-2">
               {[
                 { id: 'list' as ViewMode, icon: List, label: 'Lista' },
                 { id: 'kanban' as ViewMode, icon: LayoutGrid, label: 'Kanban' },
-                { id: 'calendar' as ViewMode, icon: Calendar, label: 'Naptár' },
               ].map((mode) => (
-                <button
+                <Button
                   key={mode.id}
                   onClick={() => setDashboardViewMode(mode.id)}
+                  variant="ghost"
+                  size="sm"
                   className={cn(
-                    'px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2',
                     dashboardViewMode === mode.id
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   )}
                 >
-                  <mode.icon size={16} />
-                  <span className="hidden sm:inline">{mode.label}</span>
-                </button>
+                  <mode.icon className="h-4 w-4 mr-2" />
+                  {mode.label}
+                </Button>
               ))}
             </div>
 
@@ -345,55 +335,6 @@ export default function DashboardPage() {
                   onTaskClick={handleOpenTask}
                   onTaskMove={handleTaskMove}
                 />
-              )}
-
-              {/* Calendar View */}
-              {dashboardViewMode === 'calendar' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-slate-400">
-                      {format(calendarStart, 'yyyy. MMMM', { locale: hu })}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setCalendarStart(d => addDays(d, -7))}>
-                        ← Előző hét
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setCalendarStart(d => addDays(d, 7))}>
-                        Következő hét →
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-7">
-                    {calendarDays.map(({ date, tasks }) => (
-                      <div
-                        key={date.toISOString()}
-                        className={cn(
-                          'rounded-xl border border-slate-800 bg-slate-900/60 p-3 min-h-[150px]',
-                          isSameDay(date, today) && 'border-indigo-500 bg-indigo-500/5'
-                        )}
-                      >
-                        <div className="text-xs font-semibold text-slate-300 mb-2 pb-1 border-b border-slate-800">
-                          {format(date, 'EEE', { locale: hu })} • {format(date, 'd.', { locale: hu })}
-                        </div>
-                        <div className="space-y-2">
-                          {tasks.length === 0 ? (
-                            <p className="text-xs text-slate-600 italic">Üres</p>
-                          ) : (
-                            tasks.map(task => (
-                              <TaskItem
-                                key={task.id}
-                                task={task}
-                                compact
-                                onClick={() => handleOpenTask(task.id)}
-                              />
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               )}
             </>
           )}

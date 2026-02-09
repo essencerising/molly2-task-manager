@@ -225,7 +225,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             <div className="flex gap-1 mb-6 p-1 bg-slate-800/50 rounded-lg">
                 {[
                     { id: 'details' as const, label: 'Részletek', icon: Tag },
-                    { id: 'subtasks' as const, label: `Alfeladatok (${subtasks.length})`, icon: CheckSquare },
+                    { id: 'subtasks' as const, label: `Részfeladatok (${subtasks.length})`, icon: CheckSquare },
                     { id: 'comments' as const, label: `Kommentek (${comments.length})`, icon: MessageSquare },
                 ].map((tab) => (
                     <button
@@ -386,7 +386,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                     <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
                         {subtasks.length === 0 ? (
                             <p className="text-sm text-slate-500 italic text-center py-8">
-                                Még nincs alfeladat. Adj hozzá egyet!
+                                Még nincs részfeladat. Adj hozzá egyet!
                             </p>
                         ) : (
                             subtasks.map((st) => (
@@ -423,7 +423,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                             value={newSubtaskTitle}
                             onChange={(e) => setNewSubtaskTitle(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
-                            placeholder="Új alfeladat..."
+                            placeholder="Új részfeladat..."
                             className="flex-1"
                         />
                         <Button onClick={handleAddSubtask} variant="secondary">

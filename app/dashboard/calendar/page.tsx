@@ -22,10 +22,6 @@ export default function CalendarPage() {
                 setLoading(true);
                 const result = await fetchTasks({ limit: 500 }); // Load more for calendar view
 
-                // Debug info with toast
-                toast.info(`📅 Összes feladat: ${result.data?.length || 0}`);
-                toast.info(`📅 Workspace ID: ${currentWorkspaceId}`);
-
                 // Filter by current workspace and only tasks with due dates
                 const workspaceTasks = (result.data ?? [])
                     .filter(task => {
@@ -46,13 +42,6 @@ export default function CalendarPage() {
                         workspaceIcon: row.workspaceIcon,
                         workspaceColor: row.workspaceColor,
                     }));
-
-                // Debug result
-                toast.success(`✅ Szűrt feladatok: ${workspaceTasks.length}`);
-
-                if (workspaceTasks.length === 0) {
-                    toast.warning('⚠️ Nincs feladat határidővel ebben a workspace-ben!');
-                }
 
                 setTasks(workspaceTasks);
             } catch (error) {

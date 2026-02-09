@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUIStore, useWorkspaceStore } from '@/stores';
 import { deleteProject } from '@/lib/workspaceService';
-import { fetchTasks } from '@/lib/tasksService';
+import { fetchTasks, archiveTask } from '@/lib/tasksService';
 import { Button } from '@/components/ui';
 import { CreateProjectModal, TaskItem, TaskItemData, TaskModal } from '@/components/shared';
 import { Trash2, Edit, ArrowLeft, MoreVertical, CheckCircle2, Circle, Clock } from 'lucide-react';

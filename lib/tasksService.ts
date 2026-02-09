@@ -104,13 +104,14 @@ interface CreateTaskInput {
   title: string;
   area: TaskArea;
   dueDate?: string | null;
+  followUpDate?: string | null;
   description?: string | null;
   assigneeId?: string | null;
   delegatorEmail?: string | null;
   recurrenceType?: Task['recurrence_type'];
   recurrenceInterval?: number | null;
   workspaceId?: string;
-  projectId?: string | null; // Ha null, akkor nincs projekthez rendelve
+  projectId?: string | null;
 }
 
 export async function createTask(input: CreateTaskInput) {
@@ -118,6 +119,7 @@ export async function createTask(input: CreateTaskInput) {
     title,
     area,
     dueDate,
+    followUpDate,
     description,
     assigneeId,
     delegatorEmail,
@@ -137,6 +139,10 @@ export async function createTask(input: CreateTaskInput) {
 
   if (dueDate) {
     payload.due_date = dueDate as any; // Supabase dátum típuskezelés miatt
+  }
+
+  if (followUpDate) {
+    payload.follow_up_at = followUpDate as any;
   }
 
   if (description) {

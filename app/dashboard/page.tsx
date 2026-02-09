@@ -104,6 +104,9 @@ export default function DashboardPage() {
           area: updatedTask.area || 'Magánélet',
           description: updatedTask.description,
           dueDate: updatedTask.due_date,
+          followUpDate: updatedTask.follow_up_at,
+          recurrenceType: updatedTask.recurrence_type,
+          recurrenceInterval: updatedTask.recurrence_interval,
           workspaceId: updatedTask.workspace_id,
           projectId: updatedTask.project_id,
         });

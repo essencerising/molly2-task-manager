@@ -99,7 +99,24 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             setFollowUpDate(task.follow_up_at?.split('T')[0] || '');
             setRecurrenceType(task.recurrence_type || 'none');
             setRecurrenceInterval(task.recurrence_interval || 1);
-            setProjectId(task.project_id || ''); // ÚJ
+            setProjectId(task.project_id || '');
+
+            // JAVÍTÁS: Reset subtasks and comments for each task
+            // TODO: Load actual subtasks and comments from database when implemented
+            setSubtasks([]);
+            setComments([]);
+        } else {
+            // Reset all form fields when task is null
+            setTitle('');
+            setDescription('');
+            setStatus('todo');
+            setDueDate('');
+            setFollowUpDate('');
+            setRecurrenceType('none');
+            setRecurrenceInterval(1);
+            setProjectId('');
+            setSubtasks([]);
+            setComments([]);
         }
     }, [task]);
 

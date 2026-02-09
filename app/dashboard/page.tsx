@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout';
 import { FocusCard, TaskItem, TaskItemData, TaskModal, NoTasksEmptyState, KanbanBoard } from '@/components/shared';
 import { Button, Badge } from '@/components/ui';
-import { useUIStore } from '@/stores';
+import { useUIStore, useWorkspaceStore } from '@/stores';
 import { updateTask, archiveTask, updateTaskStatus, createTask } from '@/lib/tasksService';
 import {
   CalendarDays,
@@ -27,6 +27,7 @@ type FilterType = 'all' | 'today' | 'followup' | 'overdue';
 
 export default function DashboardPage() {
   const { dashboardViewMode, setDashboardViewMode, isNewTaskModalOpen, closeNewTaskModal } = useUIStore();
+  const currentWorkspaceId = useWorkspaceStore(state => state.currentWorkspaceId);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [tasks, setTasks] = useState<TaskItemData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export default function DashboardPage() {
       status: 'todo',
       area: '',
       due_date: null,
+      workspace_id: currentWorkspaceId, // ÚJ - Aktuális workspace
     });
     setIsTaskModalOpen(true);
   };
@@ -73,37 +75,30 @@ export default function DashboardPage() {
     try {
       if (!updatedTask.id) {
         // New task - create it
-        const newTaskData = await createTask({
+        await createTask({
           title: updatedTask.title,
           area: updatedTask.area || 'Magánélet',
           description: updatedTask.description,
           dueDate: updatedTask.due_date,
-          workspaceId: updatedTask.workspace_id, // ÚJ
-          projectId: updatedTask.project_id, // ÚJ
+          workspaceId: updatedTask.workspace_id,
+          projectId: updatedTask.project_id,
         });
 
-        // A store-ból megpróbáljuk kitalálni a neveket a gyors UI frissítéshez
-        // (Ideális esetben a backend visszadná a relation-öket is, de a createTask csak a raw taskot adja)
-        // Egyelőre hagyjuk üresen a neveket, vagy fetch-eljük újra, de az lassú.
-        // Mivel a TaskModal-ban kiválasztottuk, az updatedTask-ban benne lehetne a név is? Nem, csak ID.
-        // De a DashboardPage nem ismeri a workspace store-t közvetlenül a renderelésen kívül.
-        // Hagyjuk, hogy a kövi frissítésnél helyreálljon, vagy használjunk reload-ot.
-        // De a legfontosabb, hogy az adatbázisba bekerüljön.
-
-        const newTask: TaskItemData = {
-          id: newTaskData.id,
-          title: newTaskData.title,
-          status: newTaskData.status || 'todo',
-          dueDate: newTaskData.due_date || undefined,
-          // Workspace és Project ID-k, hogy a update működjön
-          // De a TaskItemData nem tárol ID-ket, csak neveket a megjelenítéshez.
-          // Ezért a frissítés után érdemes lenne újratölteni a listát.
-        };
-        // Egyszerűbb megoldás: reload tasks
-        // setTasks(prev => [newTask, ...prev]); 
-        // Helyett:
-        window.location.reload(); // Nem szép, de biztos.
-        // Vagy inkább triggereljük a loadTasks-t.
+        // Refresh task list instead of full page reload
+        const result = await fetchTasks({ limit: 100 });
+        const normalized: TaskItemData[] = (result.data ?? []).map((row: any) => ({
+          id: row.id,
+          title: row.title,
+          status: row.status,
+          dueDate: row.dueDate,
+          assigneeName: row.assigneeEmail?.split('@')[0],
+          projectName: row.projectName,
+          projectColor: row.projectColor,
+          workspaceName: row.workspaceName,
+          workspaceIcon: row.workspaceIcon,
+          workspaceColor: row.workspaceColor, // ÚJ - workspace színek
+        }));
+        setTasks(normalized);
 
       } else {
         // Existing task - update it
@@ -149,10 +144,11 @@ export default function DashboardPage() {
           status: row.status,
           dueDate: row.dueDate,
           assigneeName: row.assigneeEmail?.split('@')[0],
-          projectName: row.projectName, // Javítva: area helyett projectName (ami már tartalmazza a logikát)
-          projectColor: row.projectColor, // ÚJ
-          workspaceName: row.workspaceName, // ÚJ
-          workspaceIcon: row.workspaceIcon, // ÚJ
+          projectName: row.projectName,
+          projectColor: row.projectColor,
+          workspaceName: row.workspaceName,
+          workspaceIcon: row.workspaceIcon,
+          workspaceColor: row.workspaceColor, // ÚJ - workspace színek
         }));
         setTasks(normalized);
       } catch (err) {

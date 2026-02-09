@@ -31,11 +31,17 @@ const mainNavItems = [
 export function Sidebar() {
     const pathname = usePathname();
     const { isSidebarOpen, isSidebarCollapsed, toggleSidebar, setSidebarCollapsed, openProjectModal } = useUIStore();
-    const { getCurrentWorkspace, getProjectsForCurrentWorkspace, initialize } = useWorkspaceStore();
+
+    // Reaktív store használat a getterek helyett
+    const currentWorkspaceId = useWorkspaceStore(state => state.currentWorkspaceId);
+    const workspaces = useWorkspaceStore(state => state.workspaces);
+    const allProjects = useWorkspaceStore(state => state.projects);
+    const initialize = useWorkspaceStore(state => state.initialize);
+
     const [isWorkspaceSwitcherOpen, setIsWorkspaceSwitcherOpen] = useState(false);
 
-    const currentWorkspace = getCurrentWorkspace();
-    const projects = getProjectsForCurrentWorkspace();
+    const currentWorkspace = workspaces.find(w => w.id === currentWorkspaceId);
+    const projects = allProjects.filter(p => p.workspace_id === currentWorkspaceId);
 
     // Initialize workspaces on mount
     useEffect(() => {

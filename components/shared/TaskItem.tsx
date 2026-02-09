@@ -20,6 +20,7 @@ export interface TaskItemData {
     projectColor?: string;
     workspaceName?: string; // ÚJ
     workspaceIcon?: string | null; // ÚJ
+    workspaceColor?: string; // ÚJ
 }
 
 interface TaskItemProps {
@@ -77,11 +78,22 @@ export function TaskItem({ task, onClick, compact = false }: TaskItemProps) {
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                         {/* Workspace badge (ÚJ) */}
                         {task.workspaceName && (
-                            <Badge variant="outline" size="sm" className="flex items-center gap-1 bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700">
+                            <Badge
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1 border-slate-700 text-slate-300 hover:bg-slate-700"
+                                style={{
+                                    backgroundColor: task.workspaceColor ? `${task.workspaceColor}15` : 'rgb(30 41 59)',
+                                    borderColor: task.workspaceColor || 'rgb(51 65 85)'
+                                }}
+                            >
                                 {task.workspaceIcon ? (
                                     <span>{task.workspaceIcon}</span>
                                 ) : (
-                                    <span className="font-bold text-[10px] w-3 h-3 flex items-center justify-center bg-slate-700 rounded-sm">
+                                    <span
+                                        className="font-bold text-[10px] w-3 h-3 flex items-center justify-center rounded-sm text-white"
+                                        style={{ backgroundColor: task.workspaceColor || '#6366F1' }}
+                                    >
                                         {task.workspaceName[0].toUpperCase()}
                                     </span>
                                 )}

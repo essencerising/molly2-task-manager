@@ -65,6 +65,29 @@ export function KanbanCard({ task, onClick, isDragging }: KanbanCardProps) {
 
                     {/* Meta */}
                     <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500">
+                        {/* Workspace (ÚJ) */}
+                        {task.workspaceName && (
+                            <Badge
+                                variant="outline"
+                                size="sm"
+                                className="text-[10px] flex items-center gap-1"
+                                style={{
+                                    backgroundColor: task.workspaceColor ? `${task.workspaceColor}15` : 'rgb(30 41 59)',
+                                    borderColor: task.workspaceColor || 'rgb(51 65 85)'
+                                }}
+                            >
+                                {task.workspaceIcon ? (
+                                    <span className="text-[10px]">{task.workspaceIcon}</span>
+                                ) : (
+                                    <span
+                                        className="w-2 h-2 rounded-full"
+                                        style={{ backgroundColor: task.workspaceColor || '#6366F1' }}
+                                    />
+                                )}
+                                {task.workspaceName}
+                            </Badge>
+                        )}
+
                         {/* Project */}
                         {task.projectName && (
                             <Badge variant="outline" size="sm" className="text-[10px]">

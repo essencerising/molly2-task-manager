@@ -8,6 +8,7 @@ import { TaskCard } from '../features/tasks/TaskCard';
 import { fetchTasks as fetchTasksFromService, createTask, updateTaskStatus, archiveTask, } from '../lib/tasksService';
 import type { Person } from '@/types/people';
 import { getPeopleByArea, createPerson } from '@/lib/peopleService';
+import { usePagination } from '@/features/tasks/usePagination';
 
 const AREAS: TaskArea[] = [
   'Tanya',
@@ -20,6 +21,7 @@ const AREAS: TaskArea[] = [
 ];
 
 export default function HomePage() {
+  const { page, limit, setTotal, total, nextPage, hasNextPage } = usePagination({ initialLimit: 5 }); // Kezdetben 5, hogy látszódjon a lapozás
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,10 @@ export default function HomePage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [description, setDescription] = useState('');
   const [assignee, setAssignee] = useState('');
+
+  // Recurrence state
+  const [recurrenceType, setRecurrenceType] = useState<Task['recurrence_type']>('none');
+  const [recurrenceInterval, setRecurrenceInterval] = useState<number>(1);
 
   // Felelős kiválasztása people táblából
   const [assigneeId, setAssigneeId] = useState<string>('');
@@ -49,14 +55,22 @@ export default function HomePage() {
     return 'todo';
   };
 
-        const fetchTasks = async () => {
+  const fetchTasks = async (isLoadMore = false) => {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await fetchTasksFromService(); // camelCase-es kimenet
+      // Ha "Load More"-ra kattintottunk, akkor a következő oldalt kérjük le
+      // Viszont itt egyszerűbb logika: mindig az aktuális page-ig kérjük le, VAGY appendeljük.
+      // A usePagination hook "page" állapota mondja meg, hol tartunk.
+      // De ha "Load More" (Append) logikát akarunk, akkor trükkösebb.
+      // Egyszerűbb: Klasszikus "Load More" gomb -> növeljük a page-t, és hozzáfűzzük a listához.
 
-      const normalized: Task[] = (data ?? []).map((row: any) => ({
+      const result = await fetchTasksFromService({ page, limit });
+
+      setTotal(result.count);
+
+      const normalized: Task[] = (result.data ?? []).map((row: any) => ({
         id: row.id,
         title: row.title,
         status: row.status,
@@ -71,7 +85,16 @@ export default function HomePage() {
         updated_at: row.updated_at ?? null,
       }));
 
-      setTasks(normalized);
+      if (page === 1) {
+        setTasks(normalized);
+      } else {
+        setTasks(prev => {
+          // Elkerüljük a duplikációt, bár elvileg a page lépés garantálja
+          const newIds = new Set(normalized.map(t => t.id));
+          return [...prev.filter(t => !newIds.has(t.id)), ...normalized];
+        });
+      }
+
     } catch (err) {
       console.error(err);
       setError('Nem sikerült betölteni a feladatokat.');
@@ -79,7 +102,7 @@ export default function HomePage() {
       setLoading(false);
     }
   };
-    const handleToggleStatus = async (task: Task) => {
+  const handleToggleStatus = async (task: Task) => {
     const nextStatus = getNextStatus(task.status);
 
     try {
@@ -91,7 +114,7 @@ export default function HomePage() {
         )
       );
 
-         // ha a kiválasztott taskot is nézed, ott is érdemes frissíteni
+      // ha a kiválasztott taskot is nézed, ott is érdemes frissíteni
       setSelectedTask((prev) =>
         prev && prev.id === task.id ? { ...prev, status: nextStatus } : prev
       );
@@ -102,108 +125,112 @@ export default function HomePage() {
   };
 
   const handleArchiveTask = async (task: Task) => {
-  try {
-    // 1) archiválás a DB-ben
-    await archiveTask(task.id);
+    try {
+      // 1) archiválás a DB-ben
+      await archiveTask(task.id);
 
-    // 2) lokális state-ből kivesszük
-    setTasks((prev) => prev.filter((t) => t.id === task.id ? false : true));
+      // 2) lokális state-ből kivesszük
+      setTasks((prev) => prev.filter((t) => t.id === task.id ? false : true));
 
-    // 3) ha épp meg volt nyitva a TaskCard, zárjuk
-    setSelectedTask((prev) =>
-      prev && prev.id === task.id ? null : prev
-    );
-  } catch (err) {
-    console.error(err);
-    setError('Nem sikerült archiválni a feladatot.');
-  }
-};
+      // 3) ha épp meg volt nyitva a TaskCard, zárjuk
+      setSelectedTask((prev) =>
+        prev && prev.id === task.id ? null : prev
+      );
+    } catch (err) {
+      console.error(err);
+      setError('Nem sikerült archiválni a feladatot.');
+    }
+  };
 
   useEffect(() => {
-  fetchTasks();
-}, []);
+    fetchTasks();
+  }, [page]); // Újratöltés, ha a page változik
 
-useEffect(() => {
-  async function loadPeople() {
-    try {
-      const list = await getPeopleByArea(area);
-      setPeople(list);
-    } catch (e) {
-      console.error(e);
-      setPeople([]);
+  useEffect(() => {
+    async function loadPeople() {
+      try {
+        const list = await getPeopleByArea(area);
+        setPeople(list);
+      } catch (e) {
+        console.error(e);
+        setPeople([]);
+      }
     }
-  }
 
-  loadPeople();
-}, [area]);
+    loadPeople();
+  }, [area]);
 
- const handleAddPerson = async () => {
-  setPersonError(null);
+  const handleAddPerson = async () => {
+    setPersonError(null);
 
-  if (!newPersonName.trim()) {
-    setPersonError('A név kötelező.');
-    return;
-  }
+    if (!newPersonName.trim()) {
+      setPersonError('A név kötelező.');
+      return;
+    }
 
-  try {
-    setIsSavingPerson(true);
+    try {
+      setIsSavingPerson(true);
 
-    const created = await createPerson({
-      name: newPersonName.trim(),
-      email: newPersonEmail.trim() || undefined,
-      area,
-    });
+      const created = await createPerson({
+        name: newPersonName.trim(),
+        email: newPersonEmail.trim() || undefined,
+        area,
+      });
 
-    setPeople((prev) => [...prev, created]);
-    setAssigneeId(created.id);
+      setPeople((prev) => [...prev, created]);
+      setAssigneeId(created.id);
 
-    setNewPersonName('');
-    setNewPersonEmail('');
-    setIsAddingPerson(false);
-  } catch (err) {
-    console.error(err);
-    setPersonError('Nem sikerült létrehozni a személyt.');
-  } finally {
-    setIsSavingPerson(false);
-  }
-};
+      setNewPersonName('');
+      setNewPersonEmail('');
+      setIsAddingPerson(false);
+    } catch (err) {
+      console.error(err);
+      setPersonError('Nem sikerült létrehozni a személyt.');
+    } finally {
+      setIsSavingPerson(false);
+    }
+  };
 
-    const handleCreateTask = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setError(null);
+  const handleCreateTask = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
 
-  if (!title.trim()) {
-    setError('A cím kötelező.');
-    return;
-  }
+    if (!title.trim()) {
+      setError('A cím kötelező.');
+      return;
+    }
 
-  const dueDateIso = dueDate ? new Date(dueDate).toISOString() : null;
+    const dueDateIso = dueDate ? new Date(dueDate).toISOString() : null;
 
-  try {
-    await createTask({
-      title: title.trim(),
-      area,
-      dueDate: dueDateIso ?? undefined,
-      description: description.trim() || undefined,
-      assigneeId: assigneeId || undefined,
-      delegatorEmail: 'te@emailed.vagy.placeholder', // EGYELŐRE HARDKÓD
-    });
+    try {
+      await createTask({
+        title: title.trim(),
+        area,
+        dueDate: dueDateIso ?? undefined,
+        description: description.trim() || undefined,
+        assigneeId: assigneeId || undefined,
+        delegatorEmail: 'te@emailed.vagy.placeholder', // EGYELŐRE HARDKÓD
+        recurrenceType: recurrenceType === 'none' ? null : recurrenceType,
+        recurrenceInterval: recurrenceInterval
+      });
 
-    setTitle('');
-    setArea('Tanya');
-    setDueDate('');
-    setDescription('');
-    setAssigneeId('');
-    setPeople([]);
+      setTitle('');
+      setArea('Tanya');
+      setDueDate('');
+      setDescription('');
+      setAssigneeId('');
+      setRecurrenceType('none');
+      setRecurrenceInterval(1);
+      setPeople([]);
 
-    await fetchTasks();
-  } catch (err) {
-    console.error(err);
-    setError('Nem sikerült létrehozni a feladatot.');
-  }
-};
+      await fetchTasks(); // Újra kell tölteni az 1. oldalt (vagy resetelni a listát)
+    } catch (err) {
+      console.error(err);
+      setError('Nem sikerült létrehozni a feladatot.');
+    }
+  };
 
-    const filteredTasks =
+  const filteredTasks =
     selectedArea === 'ALL'
       ? tasks
       : tasks.filter((task) => task.area === selectedArea);
@@ -263,90 +290,123 @@ useEffect(() => {
                 className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
               />
             </div>
-                <div className="space-y-2">
-  <label className="block text-sm font-medium">
-    Felelős (opcionális)
-  </label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">
+                Felelős (opcionális)
+              </label>
 
-  <div className="flex gap-2">
-    <select
-      value={assigneeId}
-      onChange={(e) => setAssigneeId(e.target.value)}
-      className="flex-1 rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-    >
-      <option value="">Nincs felelős</option>
-      {people.map((person) => (
-        <option key={person.id} value={person.id}>
-          {person.name} {person.email ? `(${person.email})` : ''}
-        </option>
-      ))}
-    </select>
+              <div className="flex gap-2">
+                <select
+                  value={assigneeId}
+                  onChange={(e) => setAssigneeId(e.target.value)}
+                  className="flex-1 rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                >
+                  <option value="">Nincs felelős</option>
+                  {people.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.name} {person.email ? `(${person.email})` : ''}
+                    </option>
+                  ))}
+                </select>
 
-    <button
-      type="button"
-      onClick={() => {
-        setIsAddingPerson((prev) => !prev);
-        setPersonError(null);
-      }}
-      className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-300 hover:bg-sky-900"
-    >
-      {isAddingPerson ? 'Mégse' : 'Új személy'}
-    </button>
-  </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingPerson((prev) => !prev);
+                    setPersonError(null);
+                  }}
+                  className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-300 hover:bg-sky-900"
+                >
+                  {isAddingPerson ? 'Mégse' : 'Új személy'}
+                </button>
+              </div>
 
-  {isAddingPerson && (
-  <div className="mt-2 space-y-2 rounded border border-slate-700 p-3">
-    <div>
-      <label className="mb-1 block text-xs font-medium">Név</label>
-      <input
-        type="text"
-        value={newPersonName}
-        onChange={(e) => setNewPersonName(e.target.value)}
-        className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm focus:border-sky-500 focus:outline-none"
-        placeholder="pl. Kovács János"
-      />
-    </div>
+              {isAddingPerson && (
+                <div className="mt-2 space-y-2 rounded border border-slate-700 p-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium">Név</label>
+                    <input
+                      type="text"
+                      value={newPersonName}
+                      onChange={(e) => setNewPersonName(e.target.value)}
+                      className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm focus:border-sky-500 focus:outline-none"
+                      placeholder="pl. Kovács János"
+                    />
+                  </div>
 
-    <div>
-      <label className="mb-1 block text-xs font-medium">
-        E-mail (opcionális)
-      </label>
-      <input
-        type="email"
-        value={newPersonEmail}
-        onChange={(e) => setNewPersonEmail(e.target.value)}
-        className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm focus:border-sky-500 focus:outline-none"
-        placeholder="pl. janos@example.com"
-      />
-    </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium">
+                      E-mail (opcionális)
+                    </label>
+                    <input
+                      type="email"
+                      value={newPersonEmail}
+                      onChange={(e) => setNewPersonEmail(e.target.value)}
+                      className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-sm focus:border-sky-500 focus:outline-none"
+                      placeholder="pl. janos@example.com"
+                    />
+                  </div>
 
-    {personError && (
-      <p className="text-xs text-red-400">{personError}</p>
-    )}
+                  {personError && (
+                    <p className="text-xs text-red-400">{personError}</p>
+                  )}
 
-    <button
-      type="button"
-      disabled={isSavingPerson}
-      onClick={handleAddPerson}
-      className="rounded bg-sky-600 px-3 py-1 text-xs font-medium text-white hover:bg-sky-500 disabled:opacity-60"
-    >
-      {isSavingPerson ? 'Mentés...' : 'Személy mentése'}
-    </button>
-  </div>
-)}
-</div>
+                  <button
+                    type="button"
+                    disabled={isSavingPerson}
+                    onClick={handleAddPerson}
+                    className="rounded bg-sky-600 px-3 py-1 text-xs font-medium text-white hover:bg-sky-500 disabled:opacity-60"
+                  >
+                    {isSavingPerson ? 'Mentés...' : 'Személy mentése'}
+                  </button>
+                </div>
+              )}
+            </div>
             <div>
-  <label className="mb-1 block text-sm font-medium">
-    Leírás (opcionális)
-  </label>
-  <textarea
-    value={description}
-    onChange={(e) => setDescription(e.target.value)}
-    className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-    rows={3}
-    placeholder="Rövid leírás a feladatról…"
-  />
-</div>
+              <label className="mb-1 block text-sm font-medium">
+                Leírás (opcionális)
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                rows={3}
+                placeholder="Rövid leírás a feladatról…"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Ismétlődés
+              </label>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={recurrenceType ?? 'none'}
+                  onChange={(e) => setRecurrenceType(e.target.value as any)}
+                  className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                >
+                  <option value="none">Nincs ismétlődés</option>
+                  <option value="daily">Naponta</option>
+                  <option value="weekly">Hetente</option>
+                  <option value="monthly">Havonta</option>
+                  <option value="yearly">Évente</option>
+                </select>
+
+                {(recurrenceType && recurrenceType !== 'none') && (
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <span>Minden</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={recurrenceInterval}
+                      onChange={(e) => setRecurrenceInterval(parseInt(e.target.value) || 1)}
+                      className="w-16 rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none text-center"
+                    />
+                    <span>. {recurrenceType === 'daily' ? 'nap' : recurrenceType === 'weekly' ? 'hét' : recurrenceType === 'monthly' ? 'hónap' : 'év'}</span>
+                  </div>
+                )}
+              </div>
+            </div>
             <button
               type="submit"
               className="rounded bg-sky-600 px-4 py-2 text-sm font-medium hover:bg-sky-500"
@@ -358,36 +418,48 @@ useEffect(() => {
 
         {/* Feladatlista */}
         <section className="rounded-lg bg-slate-900 p-4 shadow">
-  <TaskFilters
-    selectedArea={selectedArea}
-    onChangeArea={setSelectedArea}
-    onRefresh={fetchTasks}
-  />
+          <TaskFilters
+            selectedArea={selectedArea}
+            onChangeArea={setSelectedArea}
+            onRefresh={fetchTasks}
+          />
 
-  {loading ? (
-    <p className="text-sm text-slate-400">Betöltés…</p>
-  ) : (
-    <TaskList
-      tasks={filteredTasks}
-      onToggleStatus={handleToggleStatus}
-      onSelectTask={setSelectedTask}
-      onArchiveTask={handleArchiveTask}
-    />
-  )}
+          {loading ? (
+            <p className="text-sm text-slate-400">Betöltés…</p>
+          ) : (
+            <TaskList
+              tasks={filteredTasks}
+              onToggleStatus={handleToggleStatus}
+              onSelectTask={setSelectedTask}
+              onArchiveTask={handleArchiveTask}
+            />
+          )}
 
-  {selectedTask && (
-  <TaskCard
-    task={selectedTask}
-    onClose={() => setSelectedTask(null)}
-    onUpdated={(updated) => {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === updated.id ? updated : t))
-      );
-      setSelectedTask(updated);
-    }}
-  />
-)}
-</section>
+          {/* Lapozó gomb */}
+          {!loading && hasNextPage && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={nextPage}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-sm font-medium transition-colors"
+              >
+                Továbbiak betöltése ({total - tasks.length} maradt)
+              </button>
+            </div>
+          )}
+
+          {selectedTask && (
+            <TaskCard
+              task={selectedTask}
+              onClose={() => setSelectedTask(null)}
+              onUpdated={(updated) => {
+                setTasks((prev) =>
+                  prev.map((t) => (t.id === updated.id ? updated : t))
+                );
+                setSelectedTask(updated);
+              }}
+            />
+          )}
+        </section>
       </div>
     </main>
   );

@@ -1,15 +1,13 @@
 // app/dashboard/page.tsx
 import Link from 'next/link';
 import { fetchAreas, fetchTasks } from '@/lib/tasksService';
-import { TodayTasksPanel } from '@/features/dashboard/TodayTasksPanel';
-import { DelegatedTasksPanel } from '@/features/dashboard/DelegatedTasksPanel';
-import { UpcomingFollowupsPanel } from '@/features/dashboard/UpcomingFollowupsPanel';
 import { DashboardTasksClient } from '@/features/tasks/DashboardTasksClient';
 
 
 export default async function DashboardPage() {
   const areas = await fetchAreas();
-  const tasks = await fetchTasks(); // minden feladat
+  // Dashboardzon többet akarunk látni, mint 20
+  const { data: tasks } = await fetchTasks({ limit: 100 });
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -33,94 +31,12 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* Felső kártyás blokk */}
+      {/* Globális feladat naptár / lista + KPI kártyák (most már ez a fő nézet) */}
       <section className="mx-auto max-w-6xl px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Kártya 1: Mai feladataid */}
-          <Link
-            href="#today"
-            className="group rounded-xl border border-slate-800 bg-slate-900/60 p-5 hover:border-sky-500 hover:bg-slate-900 transition-colors cursor-pointer flex flex-col justify-between"
-          >
-            <div>
-              <h2 className="text-lg font-semibold mb-1 group-hover:text-sky-400 transition-colors">
-                Mai fókuszod
-              </h2>
-              <p className="text-sm text-slate-400">
-                A ma szempontjából fontos feladatok és határidők – lásd lejjebb
-                a „Mai feladataid” panelben.
-              </p>
-            </div>
-            <div className="mt-4 text-xs text-slate-500">
-              Később: valós lista, státusz, gyors akciók.
-            </div>
-          </Link>
-
-          {/* Kártya 2: Általad delegált feladatok */}
-          <Link
-            href="#delegated"
-            className="group rounded-xl border border-slate-800 bg-slate-900/60 p-5 hover:border-amber-500 hover:bg-slate-900 transition-colors cursor-pointer flex flex-col justify-between"
-          >
-            <div>
-              <h2 className="text-lg font-semibold mb-1 group-hover:text-amber-300 transition-colors">
-                Általad delegált feladatok
-              </h2>
-              <p className="text-sm text-slate-400">
-                Minden feladat, amit másnak adtál ki, hogy lásd, hol tartanak a
-                delegálások.
-              </p>
-            </div>
-            <div className="mt-4 text-xs text-slate-500">
-              Később: „delegáló” mező, státusz szerinti csoportosítás.
-            </div>
-          </Link>
-
-          {/* Kártya 3: Közelgő follow‑upok */}
-          <Link
-            href="#followups"
-            className="group rounded-xl border border-slate-800 bg-slate-900/60 p-5 hover:border-emerald-500 hover:bg-slate-900 transition-colors cursor-pointer flex flex-col justify-between"
-          >
-            <div>
-              <h2 className="text-lg font-semibold mb-1 group-hover:text-emerald-300 transition-colors">
-                Közelgő follow‑upok
-              </h2>
-              <p className="text-sm text-slate-400">
-                A közeljövőben esedékes follow‑up dátumok, hogy biztosan utána
-                tudj menni a fontos ügyeknek.
-              </p>
-            </div>
-            <div className="mt-4 text-xs text-slate-500">
-              Később: dátum szerinti rendezés, naptár nézetbe ugrás.
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* Mai feladataid panel */}
-      <section id="today" className="mx-auto max-w-6xl px-4 pb-8">
-        {/* Itt most még nem szűrünk konkrét e-mailre, minden ma esedékes feladat jön. */}
-        {/* Később: <TodayTasksPanel assigneeEmail={currentUser.email} /> */}
-        {/* @ ts-expect-error Server Component */}
-        <TodayTasksPanel />
-      </section>
-
-      {/* Általad delegált feladatok panel */}
-      <section id="delegated" className="mx-auto max-w-6xl px-4 pb-8">
-        {/* Később: delegatorEmail={currentUser.email} */}
-        {/* @ ts-expect-error Server Component */}
-        <DelegatedTasksPanel />
-      </section>
-
-      {/* Közelgő follow-upok panel */}
-      <section id="followups" className="mx-auto max-w-6xl px-4 pb-12">
-        {/* Később: assigneeEmail={currentUser.email} vagy delegator szűrés */}
-        {/* @ ts-expect-error Server Component */}
-        <UpcomingFollowupsPanel daysAhead={7} />
-      </section>
-
-      {/* Globális feladat naptár / lista */}
-      <section className="mx-auto max-w-6xl px-4 pb-12">
         <DashboardTasksClient tasks={tasks as any} />
       </section>
+
+
 
       {/* Projektek / area-k szekció */}
       <section className="mx-auto max-w-6xl px-4 pb-12">

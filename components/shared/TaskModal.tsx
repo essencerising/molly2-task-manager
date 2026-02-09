@@ -78,6 +78,8 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
     const [recurrenceType, setRecurrenceType] = useState<TaskData['recurrence_type']>('none');
     const [recurrenceInterval, setRecurrenceInterval] = useState(1);
     const [projectId, setProjectId] = useState<string>(''); // ÚJ
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 
     // Subtasks & Comments
     const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -223,10 +225,14 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
 
     const handleDelete = () => {
         if (!task?.id) return;
-        if (confirm('Biztosan törlöd ezt a feladatot?')) {
-            onDelete?.(task.id);
-            onClose();
-        }
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = () => {
+        if (!task?.id) return;
+        onDelete?.(task.id);
+        setShowDeleteConfirm(false);
+        onClose();
     };
 
     const statusOptions = [

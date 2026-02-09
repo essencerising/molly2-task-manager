@@ -29,13 +29,13 @@ export function Modal({ isOpen, onClose, title, description, children, size = 'm
         <Fragment>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+                className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
                 onClick={onClose}
                 aria-hidden="true"
             />
 
             {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
                 <div
                     className={cn(
                         'relative w-full bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl',

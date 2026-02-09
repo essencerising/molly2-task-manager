@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { fetchTasks } from '@/lib/tasksService';
 import { isSameDay, addDays, isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 import { hu } from 'date-fns/locale/hu';
+import { toast } from 'sonner';
 
 type ViewMode = 'list' | 'kanban' | 'calendar';
 type FilterType = 'all' | 'today' | 'followup' | 'overdue';
@@ -36,11 +37,34 @@ export default function DashboardPage() {
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  const handleOpenTask = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      setSelectedTask(task);
-      setIsTaskModalOpen(true);
+  const handleOpenTask = async (taskId: string) => {
+    try {
+      // Fetch full task data from database
+      const result = await fetchTasks({ limit: 100 });
+      const fullTask = result.data?.find((t: any) => t.id === taskId);
+
+      if (fullTask) {
+        // Convert to the format TaskModal expects
+        setSelectedTask({
+          id: fullTask.id,
+          title: fullTask.title,
+          description: fullTask.description || '',
+          status: fullTask.status,
+          area: fullTask.area || '',
+          due_date: fullTask.dueDate || null,
+          follow_up_at: fullTask.followUpDate || null,
+          recurrence_type: fullTask.recurrenceType || 'none',
+          recurrence_interval: fullTask.recurrenceInterval || 1,
+          workspace_id: fullTask.workspace_id,
+          project_id: fullTask.project_id || null,
+        });
+        setIsTaskModalOpen(true);
+      } else {
+        toast.error('Feladat nem található');
+      }
+    } catch (error) {
+      console.error('Failed to load task details:', error);
+      toast.error('Hiba a feladat betöltésekor');
     }
   };
 

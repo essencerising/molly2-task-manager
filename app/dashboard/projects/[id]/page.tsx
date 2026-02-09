@@ -4,9 +4,10 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUIStore, useWorkspaceStore } from '@/stores';
 import { deleteProject } from '@/lib/workspaceService';
+import { fetchTasks } from '@/lib/tasksService';
 import { Button } from '@/components/ui';
-import { CreateProjectModal } from '@/components/shared';
-import { Trash2, Edit, ArrowLeft, MoreVertical } from 'lucide-react';
+import { CreateProjectModal, TaskItem, TaskItemData, TaskModal } from '@/components/shared';
+import { Trash2, Edit, ArrowLeft, MoreVertical, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,12 +18,54 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const { projects, removeProject, initialize, isInitialized } = useWorkspaceStore();
     const { openProjectModal } = useUIStore();
 
+    const [tasks, setTasks] = useState<TaskItemData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedTask, setSelectedTask] = useState<any>(null);
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
     useEffect(() => {
         if (!isInitialized) initialize();
     }, [isInitialized, initialize]);
 
     // Find project from store
     const project = projects.find(p => p.id === id);
+
+    // Load project tasks
+    useEffect(() => {
+        async function loadProjectTasks() {
+            if (!project) return;
+
+            try {
+                setLoading(true);
+                const result = await fetchTasks({ limit: 100 });
+
+                // Filter tasks by project_id
+                const projectTasks = (result.data ?? [])
+                    .filter((row: any) => row.project_id === project.id)
+                    .map((row: any) => ({
+                        id: row.id,
+                        title: row.title,
+                        status: row.status,
+                        dueDate: row.dueDate,
+                        assigneeName: row.assigneeEmail?.split('@')[0],
+                        projectName: row.projectName,
+                        projectColor: row.projectColor,
+                        workspaceName: row.workspaceName,
+                        workspaceIcon: row.workspaceIcon,
+                        workspaceColor: row.workspaceColor,
+                    }));
+
+                setTasks(projectTasks);
+            } catch (error) {
+                console.error('Failed to load project tasks:', error);
+                toast.error('Hiba a feladatok betöltésekor');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadProjectTasks();
+    }, [project]);
 
     const handleDelete = async () => {
         if (!project) return;
@@ -39,6 +82,37 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         }
     };
 
+    const handleTaskClick = async (task: TaskItemData) => {
+        try {
+            // Fetch full task data from database
+            const result = await fetchTasks({ limit: 100 });
+            const fullTask = result.data?.find((t: any) => t.id === task.id);
+
+            if (fullTask) {
+                // Convert to the format TaskModal expects
+                setSelectedTask({
+                    id: fullTask.id,
+                    title: fullTask.title,
+                    description: fullTask.description || '',
+                    status: fullTask.status,
+                    area: fullTask.area || '',
+                    due_date: fullTask.dueDate || null,
+                    follow_up_at: fullTask.followUpDate || null,
+                    recurrence_type: fullTask.recurrenceType || 'none',
+                    recurrence_interval: fullTask.recurrenceInterval || 1,
+                    workspace_id: fullTask.workspace_id,
+                    project_id: fullTask.project_id || null,
+                });
+                setIsTaskModalOpen(true);
+            } else {
+                toast.error('Feladat nem található');
+            }
+        } catch (error) {
+            console.error('Failed to load task details:', error);
+            toast.error('Hiba a feladat betöltésekor');
+        }
+    };
+
     if (!project) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -50,11 +124,27 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         );
     }
 
+    // Calculate statistics
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'done').length;
+    const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+    const todoTasks = tasks.filter(t => t.status === 'todo').length;
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
     return (
         <div className="flex flex-col h-full bg-slate-950 text-slate-100 p-6 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push('/dashboard/projects')}
+                        className="text-slate-400 hover:text-white"
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Vissza
+                    </Button>
                     <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
                         style={{ backgroundColor: project.color || '#6366F1' }}
@@ -75,15 +165,6 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openProjectModal(project.id)}
-                        className="text-slate-400 hover:text-white"
-                    >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Szerkesztés
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
                         onClick={handleDelete}
                         className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
                     >
@@ -93,13 +174,100 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 </div>
             </div>
 
-            {/* Content Placeholder */}
-            <div className="flex-1 bg-slate-900/50 rounded-xl border border-slate-800 p-6 flex flex-col items-center justify-center text-slate-500">
-                <p>Itt lesznek a projekt feladatai listázva.</p>
-                <p className="text-sm mt-2">(Fejlesztés alatt)</p>
+            {/* Statistics */}
+            <div className="grid grid-cols-4 gap-4">
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
+                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                        <Circle className="h-4 w-4" />
+                        <span>Összes</span>
+                    </div>
+                    <div className="text-2xl font-bold">{totalTasks}</div>
+                </div>
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
+                    <div className="flex items-center gap-2 text-amber-400 text-sm mb-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Folyamatban</span>
+                    </div>
+                    <div className="text-2xl font-bold">{inProgressTasks}</div>
+                </div>
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
+                    <div className="flex items-center gap-2 text-green-400 text-sm mb-1">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Kész</span>
+                    </div>
+                    <div className="text-2xl font-bold">{completedTasks}</div>
+                </div>
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
+                    <div className="flex items-center gap-2 text-indigo-400 text-sm mb-1">
+                        <span>Készültség</span>
+                    </div>
+                    <div className="text-2xl font-bold">{completionRate}%</div>
+                </div>
             </div>
 
-            {/* Modal for editing is already mounted in Sidebar/Layout, but we can rely on it being global */}
+            {/* Tasks List */}
+            <div className="flex-1 bg-slate-900/50 rounded-xl border border-slate-800 p-6 overflow-auto">
+                <h2 className="text-lg font-semibold mb-4">Feladatok</h2>
+
+                {loading ? (
+                    <div className="flex items-center justify-center h-32 text-slate-500">
+                        <p>Betöltés...</p>
+                    </div>
+                ) : tasks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-32 text-slate-500">
+                        <p>Még nincs feladat ebben a projektben.</p>
+                        <p className="text-sm mt-2">Hozz létre egy új feladatot a Dashboard-on!</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {tasks.map(task => (
+                            <TaskItem
+                                key={task.id}
+                                task={task}
+                                onClick={() => handleTaskClick(task)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Task Modal */}
+            {selectedTask && (
+                <TaskModal
+                    task={selectedTask}
+                    isOpen={isTaskModalOpen}
+                    onClose={() => {
+                        setIsTaskModalOpen(false);
+                        setSelectedTask(null);
+                    }}
+                    onSave={async (updatedTask) => {
+                        // Refresh tasks after save
+                        const result = await fetchTasks({ limit: 100 });
+                        const projectTasks = (result.data ?? [])
+                            .filter((row: any) => row.project_id === project.id)
+                            .map((row: any) => ({
+                                id: row.id,
+                                title: row.title,
+                                status: row.status,
+                                dueDate: row.dueDate,
+                                assigneeName: row.assigneeEmail?.split('@')[0],
+                                projectName: row.projectName,
+                                projectColor: row.projectColor,
+                                workspaceName: row.workspaceName,
+                                workspaceIcon: row.workspaceIcon,
+                                workspaceColor: row.workspaceColor,
+                            }));
+                        setTasks(projectTasks);
+                        setIsTaskModalOpen(false);
+                        setSelectedTask(null);
+                    }}
+                    onDelete={async (taskId) => {
+                        setTasks(prev => prev.filter(t => t.id !== taskId));
+                        setIsTaskModalOpen(false);
+                        setSelectedTask(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

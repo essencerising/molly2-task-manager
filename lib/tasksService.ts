@@ -13,6 +13,8 @@ interface TaskRow {
   delegator_email: string | null;
   due_date: string | null;
   follow_up_at: string | null;
+  recurrence_type: 'none' | 'daily' | 'weekly' | 'monthly' | null;
+  recurrence_interval: number | null;
   created_at: string;
   updated_at: string;
   assignee_id: string | null;
@@ -81,6 +83,8 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
     delegatorEmail: row.delegator_email,
     dueDate: row.due_date,
     followUpDate: row.follow_up_at,
+    recurrenceType: row.recurrence_type,
+    recurrenceInterval: row.recurrence_interval,
     created_at: row.created_at,
     updated_at: row.updated_at,
     assignee_id: row.assignee_id,

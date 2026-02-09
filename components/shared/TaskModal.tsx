@@ -46,7 +46,8 @@ export interface TaskData {
     follow_up_at?: string | null;
     recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly';
     recurrence_interval?: number;
-    workspace_id?: string | null; // ÚJ
+    workspace_id?: string;
+    project_id?: string | null; // ÚJ
 }
 
 interface TaskModalProps {

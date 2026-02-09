@@ -262,9 +262,16 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         setSelectedTask(null);
                     }}
                     onDelete={async (taskId) => {
-                        setTasks(prev => prev.filter(t => t.id !== taskId));
-                        setIsTaskModalOpen(false);
-                        setSelectedTask(null);
+                        try {
+                            await archiveTask(taskId);
+                            setTasks(prev => prev.filter(t => t.id !== taskId));
+                            setIsTaskModalOpen(false);
+                            setSelectedTask(null);
+                            toast.success('Feladat archiválva');
+                        } catch (error) {
+                            console.error('Failed to archive task:', error);
+                            toast.error('Hiba törlés közben');
+                        }
                     }}
                 />
             )}

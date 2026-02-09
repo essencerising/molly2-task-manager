@@ -25,6 +25,8 @@ export interface Task {
   delegator_email?: string | null; // ÚJ
   recurrence_type?: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'none' | null;
   recurrence_interval?: number | null;
+  workspace_id?: string; // Opcionális a migráció alatt, de DB-ben kötelező lesz
+  project_id?: string | null;
 }
 
 export interface Subtask {

@@ -16,6 +16,19 @@ interface TaskRow {
   created_at: string;
   updated_at: string;
   assignee_id: string | null;
+  workspace_id: string; // ÚJ
+  project_id: string | null; // ÚJ
+  projects?: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
+  workspaces?: {
+    id: string;
+    name: string;
+    color: string | null;
+    icon: string | null;
+  } | null;
   assignee?: {
     id: string;
     name: string;
@@ -40,7 +53,7 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
 
   const { data, error, count } = await supabase
     .from('tasks')
-    .select('*, assignee:people!tasks_assignee_id_fkey(id, name, email)', { count: 'exact' })
+    .select('*, assignee:people!tasks_assignee_id_fkey(id, name, email), projects(id, name, color), workspaces(id, name, color, icon)', { count: 'exact' })
     .is('archived_at', null)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -56,6 +69,13 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
     title: row.title,
     status: row.status,
     area: row.area,
+    workspace_id: row.workspace_id,
+    project_id: row.project_id,
+    projectName: row.projects?.name || row.area, // Fallback to area if no project
+    projectColor: row.projects?.color || '#6366F1',
+    workspaceName: row.workspaces?.name, // ÚJ
+    workspaceColor: row.workspaces?.color, // ÚJ
+    workspaceIcon: row.workspaces?.icon, // ÚJ
     description: row.description,
     assigneeEmail: row.assignee_email, // Megtartjuk a mezőt, de deprecated
     delegatorEmail: row.delegator_email,
@@ -85,6 +105,8 @@ interface CreateTaskInput {
   delegatorEmail?: string | null;
   recurrenceType?: Task['recurrence_type'];
   recurrenceInterval?: number | null;
+  workspaceId?: string;
+  projectId?: string | null; // Ha null, akkor nincs projekthez rendelve
 }
 
 export async function createTask(input: CreateTaskInput) {
@@ -96,13 +118,17 @@ export async function createTask(input: CreateTaskInput) {
     assigneeId,
     delegatorEmail,
     recurrenceType,
-    recurrenceInterval
+    recurrenceInterval,
+    workspaceId,
+    projectId
   } = input;
 
   const payload: Partial<Task> = {
     title,
     area,
     status: 'todo',
+    workspace_id: workspaceId,
+    project_id: projectId
   };
 
   if (dueDate) {
@@ -261,6 +287,7 @@ interface UpdateTaskDetailsInput {
   assigneeEmail?: string | null;
   recurrenceType?: Task['recurrence_type'];
   recurrenceInterval?: number | null;
+  projectId?: string | null;
 }
 
 export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
@@ -292,6 +319,9 @@ export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
   if (input.recurrenceInterval !== undefined) {
     payload.recurrence_interval = input.recurrenceInterval;
   }
+  if (input.projectId !== undefined) {
+    payload.project_id = input.projectId;
+  }
 
   const { error } = await supabase
     .from('tasks')
@@ -303,6 +333,9 @@ export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
     throw error;
   }
 }
+
+// Alias for updateTaskDetails (used by Dashboard)
+export const updateTask = updateTaskDetails;
 
 // ------------------
 // Distinct area-k lekérése dashboardhoz

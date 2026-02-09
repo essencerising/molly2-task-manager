@@ -320,8 +320,10 @@ export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
   if (assigneeId !== undefined) {
     payload.assignee_id = assigneeId as any;
   }
-  if (followUpAt !== undefined) {
-    payload.follow_up_at = followUpAt as any;
+  // Support both followUpAt (camelCase) and follow_up_at (snake_case)
+  const followUpValue = followUpAt !== undefined ? followUpAt : (input as any).follow_up_at;
+  if (followUpValue !== undefined) {
+    payload.follow_up_at = followUpValue as any;
   }
   if (input.recurrenceType !== undefined) {
     payload.recurrence_type = input.recurrenceType;
@@ -331,6 +333,15 @@ export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
   }
   if (input.projectId !== undefined) {
     payload.project_id = input.projectId;
+  }
+  // Support both dueDate and due_date
+  const dueDateValue = (input as any).dueDate !== undefined ? (input as any).dueDate : (input as any).due_date;
+  if (dueDateValue !== undefined) {
+    payload.due_date = dueDateValue as any;
+  }
+  // Support status updates
+  if ((input as any).status !== undefined) {
+    payload.status = (input as any).status;
   }
 
   const { error } = await supabase

@@ -10,3 +10,5 @@ export { KanbanColumn } from './KanbanColumn';
 export { KanbanCard } from './KanbanCard';
 export { WorkspaceSwitcher } from './WorkspaceSwitcher';
 export { CreateProjectModal } from './CreateProjectModal';
+export { Calendar } from './Calendar';
+export { CalendarDay } from './CalendarDay';

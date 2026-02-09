@@ -4,6 +4,7 @@
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
 import { TaskItemData } from './TaskItem';
+import { useState } from 'react';
 
 interface CalendarDayProps {
     date: Date;
@@ -15,8 +16,9 @@ interface CalendarDayProps {
 
 export function CalendarDay({ date, isCurrentMonth, isToday, tasks, onTaskClick }: CalendarDayProps) {
     const dayNumber = date.getDate();
+    const [showAll, setShowAll] = useState(false);
     const maxVisibleTasks = 3;
-    const visibleTasks = tasks.slice(0, maxVisibleTasks);
+    const visibleTasks = showAll ? tasks : tasks.slice(0, maxVisibleTasks);
     const remainingCount = tasks.length - maxVisibleTasks;
 
     return (
@@ -77,11 +79,24 @@ export function CalendarDay({ date, isCurrentMonth, isToday, tasks, onTaskClick 
                     </button>
                 ))}
 
-                {/* More tasks indicator */}
-                {remainingCount > 0 && (
-                    <div className="text-xs text-slate-500 px-2">
+                {/* More tasks indicator - now clickable */}
+                {remainingCount > 0 && !showAll && (
+                    <button
+                        onClick={() => setShowAll(true)}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 px-2 py-1 hover:bg-slate-800/50 rounded transition-colors w-full text-left"
+                    >
                         +{remainingCount} több
-                    </div>
+                    </button>
+                )}
+
+                {/* Show less button */}
+                {showAll && tasks.length > maxVisibleTasks && (
+                    <button
+                        onClick={() => setShowAll(false)}
+                        className="text-xs text-slate-500 hover:text-slate-400 px-2 py-1 hover:bg-slate-800/50 rounded transition-colors w-full text-left"
+                    >
+                        Kevesebb
+                    </button>
                 )}
             </div>
         </div>

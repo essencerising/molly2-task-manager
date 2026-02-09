@@ -78,7 +78,7 @@ export function Calendar({ tasks, onTaskClick }: CalendarProps) {
                         {format(currentDate, 'yyyy. MMMM', { locale: hu })}
                     </h2>
                     <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={goToToday}
                         className="text-slate-400 hover:text-white"

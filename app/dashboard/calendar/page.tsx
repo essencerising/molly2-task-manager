@@ -22,12 +22,20 @@ export default function CalendarPage() {
                 setLoading(true);
                 const result = await fetchTasks({ limit: 500 }); // Load more for calendar view
 
+                console.log('📅 Calendar - All tasks:', result.data?.length);
+                console.log('📅 Calendar - Current workspace:', currentWorkspaceId);
+
                 // Filter by current workspace and only tasks with due dates
                 const workspaceTasks = (result.data ?? [])
-                    .filter(task =>
-                        task.workspace_id === currentWorkspaceId &&
-                        task.dueDate != null
-                    )
+                    .filter(task => {
+                        const hasWorkspace = task.workspace_id === currentWorkspaceId;
+                        const hasDueDate = task.dueDate != null;
+
+                        if (!hasWorkspace) console.log('❌ Task filtered (wrong workspace):', task.title);
+                        if (!hasDueDate) console.log('❌ Task filtered (no due date):', task.title);
+
+                        return hasWorkspace && hasDueDate;
+                    })
                     .map((row: any) => ({
                         id: row.id,
                         title: row.title,
@@ -40,6 +48,9 @@ export default function CalendarPage() {
                         workspaceIcon: row.workspaceIcon,
                         workspaceColor: row.workspaceColor,
                     }));
+
+                console.log('✅ Calendar - Filtered tasks:', workspaceTasks.length);
+                console.log('✅ Calendar - Tasks:', workspaceTasks);
 
                 setTasks(workspaceTasks);
             } catch (error) {

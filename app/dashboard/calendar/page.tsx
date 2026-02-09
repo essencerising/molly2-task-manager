@@ -22,17 +22,15 @@ export default function CalendarPage() {
                 setLoading(true);
                 const result = await fetchTasks({ limit: 500 }); // Load more for calendar view
 
-                console.log('📅 Calendar - All tasks:', result.data?.length);
-                console.log('📅 Calendar - Current workspace:', currentWorkspaceId);
+                // Debug info with toast
+                toast.info(`📅 Összes feladat: ${result.data?.length || 0}`);
+                toast.info(`📅 Workspace ID: ${currentWorkspaceId}`);
 
                 // Filter by current workspace and only tasks with due dates
                 const workspaceTasks = (result.data ?? [])
                     .filter(task => {
                         const hasWorkspace = task.workspace_id === currentWorkspaceId;
                         const hasDueDate = task.dueDate != null;
-
-                        if (!hasWorkspace) console.log('❌ Task filtered (wrong workspace):', task.title);
-                        if (!hasDueDate) console.log('❌ Task filtered (no due date):', task.title);
 
                         return hasWorkspace && hasDueDate;
                     })
@@ -49,8 +47,12 @@ export default function CalendarPage() {
                         workspaceColor: row.workspaceColor,
                     }));
 
-                console.log('✅ Calendar - Filtered tasks:', workspaceTasks.length);
-                console.log('✅ Calendar - Tasks:', workspaceTasks);
+                // Debug result
+                toast.success(`✅ Szűrt feladatok: ${workspaceTasks.length}`);
+
+                if (workspaceTasks.length === 0) {
+                    toast.warning('⚠️ Nincs feladat határidővel ebben a workspace-ben!');
+                }
 
                 setTasks(workspaceTasks);
             } catch (error) {
@@ -63,6 +65,8 @@ export default function CalendarPage() {
 
         if (currentWorkspaceId) {
             loadTasks();
+        } else {
+            toast.error('❌ Nincs workspace kiválasztva!');
         }
     }, [currentWorkspaceId]);
 

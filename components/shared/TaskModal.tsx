@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter, Button, Input, Badge } from '@/components/ui';
 import { useUIStore } from '@/stores';
+import { fetchSubtasks, createSubtask, toggleSubtask, deleteSubtask } from '@/lib/subtasksService';
+import { toast } from 'sonner';
 import {
     Calendar,
     User,

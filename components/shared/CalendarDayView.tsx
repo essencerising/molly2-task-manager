@@ -78,9 +78,10 @@ export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange 
             {/* Tasks */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {dayTasks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500">
-                        <p className="text-lg mb-1">Nincs feladat erre a napra</p>
-                        <p className="text-sm">📅 {format(currentDate, 'MMMM d.', { locale: hu })}</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                        <span className="text-4xl mb-3">☀️</span>
+                        <p className="text-lg font-semibold text-slate-200 mb-1">Szabad nap!</p>
+                        <p className="text-sm text-slate-500">📅 {format(currentDate, 'MMMM d.', { locale: hu })} – nincsenek feladatok</p>
                     </div>
                 ) : (
                     <div className="space-y-6">

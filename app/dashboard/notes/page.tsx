@@ -207,15 +207,21 @@ export default function NotesPage() {
                     {/* Notes list */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                         {filteredNotes.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-500 p-6">
-                                <StickyNote className="h-12 w-12 mb-3 text-slate-700" />
-                                <p className="text-sm">{searchQuery ? 'Nincs találat' : 'Még nincs jegyzeted'}</p>
-                                {!searchQuery && (
-                                    <Button variant="secondary" size="sm" onClick={handleCreate} className="mt-3">
+                            searchQuery ? (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500 p-6">
+                                    <span className="text-3xl mb-3">🔍</span>
+                                    <p className="text-sm">Nincs találat: &ldquo;{searchQuery}&rdquo;</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full p-4">
+                                    <span className="text-4xl mb-3">📝</span>
+                                    <p className="text-sm font-medium text-slate-300 mb-1">Üres jegyzetfüzet</p>
+                                    <p className="text-xs text-slate-500 mb-3">Jegyezd fel a gondolataidat!</p>
+                                    <Button variant="primary" size="sm" onClick={handleCreate}>
                                         <Plus size={14} className="mr-1" /> Első jegyzet
                                     </Button>
-                                )}
-                            </div>
+                                </div>
+                            )
                         ) : (
                             filteredNotes.map((note) => (
                                 <button

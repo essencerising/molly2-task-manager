@@ -26,8 +26,9 @@ export default function RootLayout({
         {children}
         <Toaster
           theme="dark"
-          position="bottom-right"
+          position="top-center"
           toastOptions={{
+            className: 'sm:!right-4 sm:!left-auto sm:!top-auto sm:!bottom-4',
             style: {
               background: '#1e293b',
               border: '1px solid #334155',

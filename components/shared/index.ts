@@ -3,7 +3,7 @@ export { FocusCard } from './FocusCard';
 export { TaskItem } from './TaskItem';
 export type { TaskItemData } from './TaskItem';
 export { TaskModal } from './TaskModal';
-export { EmptyState, NoTasksEmptyState, NoProjectsEmptyState, NoEventsEmptyState } from './EmptyState';
+export { EmptyState, NoTasksEmptyState, NoProjectsEmptyState, NoEventsEmptyState, NoNotesEmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 export { KanbanBoard } from './KanbanBoard';
 export { KanbanColumn } from './KanbanColumn';

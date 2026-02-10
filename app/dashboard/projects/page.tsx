@@ -60,10 +60,15 @@ export default function ProjectsPage() {
 
             {/* Projects Grid */}
             {projects.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
-                    <FolderKanban className="h-16 w-16 mb-4 text-slate-700" />
-                    <p className="text-lg mb-2">Még nincs projekt</p>
-                    <p className="text-sm">Hozz létre egy új projektet a Sidebar-ban!</p>
+                <div className="flex-1 flex flex-col items-center justify-center py-16">
+                    <div className="relative mb-6">
+                        <div className="absolute inset-0 rounded-full blur-xl opacity-30 bg-indigo-500" />
+                        <div className="relative p-5 rounded-2xl bg-indigo-950/50 ring-1 ring-indigo-500/20">
+                            <span className="text-4xl block">📁</span>
+                        </div>
+                    </div>
+                    <p className="text-lg font-semibold text-slate-200 mb-2">Még nincs projekt</p>
+                    <p className="text-sm text-slate-400">A projektek segítenek rendszerezni a feladataidat. Hozz létre egyet!</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

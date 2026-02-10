@@ -132,31 +132,31 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     return (
-        <div className="flex flex-col h-full bg-slate-950 text-slate-100 p-6 space-y-6">
+        <div className="flex flex-col h-full bg-slate-950 text-slate-100 p-4 md:p-6 space-y-4 md:space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 md:gap-4">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => router.push('/dashboard/projects')}
                         className="text-slate-400 hover:text-white"
                     >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Vissza
+                        <ArrowLeft className="h-4 w-4 mr-1 md:mr-2" />
+                        <span className="hidden sm:inline">Vissza</span>
                     </Button>
                     <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                        className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
                         style={{ backgroundColor: project.color || '#6366F1' }}
                     >
-                        <span className="text-xl font-bold text-white uppercase">
+                        <span className="text-base md:text-xl font-bold text-white uppercase">
                             {project.name.substring(0, 2)}
                         </span>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold">{project.name}</h1>
+                    <div className="min-w-0">
+                        <h1 className="text-lg md:text-2xl font-bold truncate">{project.name}</h1>
                         {project.description && (
-                            <p className="text-slate-400 text-sm mt-1">{project.description}</p>
+                            <p className="text-slate-400 text-xs md:text-sm mt-1 line-clamp-1">{project.description}</p>
                         )}
                     </div>
                 </div>
@@ -168,40 +168,40 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                         onClick={handleDelete}
                         className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
                     >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Törlés
+                        <Trash2 className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Törlés</span>
                     </Button>
                 </div>
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-4 gap-4">
-                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
-                    <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                        <Circle className="h-4 w-4" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-3 md:p-4">
+                    <div className="flex items-center gap-2 text-slate-400 text-xs md:text-sm mb-1">
+                        <Circle className="h-3 w-3 md:h-4 md:w-4" />
                         <span>Összes</span>
                     </div>
-                    <div className="text-2xl font-bold">{totalTasks}</div>
+                    <div className="text-xl md:text-2xl font-bold">{totalTasks}</div>
                 </div>
-                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
-                    <div className="flex items-center gap-2 text-amber-400 text-sm mb-1">
-                        <Clock className="h-4 w-4" />
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-3 md:p-4">
+                    <div className="flex items-center gap-2 text-amber-400 text-xs md:text-sm mb-1">
+                        <Clock className="h-3 w-3 md:h-4 md:w-4" />
                         <span>Folyamatban</span>
                     </div>
-                    <div className="text-2xl font-bold">{inProgressTasks}</div>
+                    <div className="text-xl md:text-2xl font-bold">{inProgressTasks}</div>
                 </div>
-                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
-                    <div className="flex items-center gap-2 text-green-400 text-sm mb-1">
-                        <CheckCircle2 className="h-4 w-4" />
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-3 md:p-4">
+                    <div className="flex items-center gap-2 text-green-400 text-xs md:text-sm mb-1">
+                        <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4" />
                         <span>Kész</span>
                     </div>
-                    <div className="text-2xl font-bold">{completedTasks}</div>
+                    <div className="text-xl md:text-2xl font-bold">{completedTasks}</div>
                 </div>
-                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
-                    <div className="flex items-center gap-2 text-indigo-400 text-sm mb-1">
+                <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-3 md:p-4">
+                    <div className="flex items-center gap-2 text-indigo-400 text-xs md:text-sm mb-1">
                         <span>Készültség</span>
                     </div>
-                    <div className="text-2xl font-bold">{completionRate}%</div>
+                    <div className="text-xl md:text-2xl font-bold">{completionRate}%</div>
                 </div>
             </div>
 

@@ -21,7 +21,7 @@ const NOTE_COLORS = [
 ];
 
 export default function NotesPage() {
-    const currentWorkspaceId = useWorkspaceStore(state => state.currentWorkspaceId);
+    const { currentWorkspaceId, initialize, isInitialized } = useWorkspaceStore();
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,10 +32,20 @@ export default function NotesPage() {
     const contentRef = useRef<HTMLTextAreaElement>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Initialize workspace store if needed
+    useEffect(() => {
+        if (!isInitialized) {
+            initialize();
+        }
+    }, [isInitialized, initialize]);
+
     // Load notes
     useEffect(() => {
         async function load() {
-            if (!currentWorkspaceId) return;
+            if (!currentWorkspaceId) {
+                setLoading(false);
+                return;
+            }
             try {
                 setLoading(true);
                 const data = await fetchNotes(currentWorkspaceId);

@@ -12,3 +12,5 @@ export { WorkspaceSwitcher } from './WorkspaceSwitcher';
 export { CreateProjectModal } from './CreateProjectModal';
 export { Calendar } from './Calendar';
 export { CalendarDay } from './CalendarDay';
+export { CalendarWeekView } from './CalendarWeekView';
+export { CalendarDayView } from './CalendarDayView';

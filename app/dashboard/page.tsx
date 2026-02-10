@@ -57,6 +57,7 @@ export default function DashboardPage() {
           recurrence_interval: fullTask.recurrenceInterval || 1,
           workspace_id: fullTask.workspace_id,
           project_id: fullTask.project_id || null,
+          contact_id: fullTask.contact_id || null,
         });
         setIsTaskModalOpen(true);
       } else {
@@ -82,7 +83,9 @@ export default function DashboardPage() {
       status: 'todo',
       area: '',
       due_date: null,
-      workspace_id: currentWorkspaceId, // ÚJ - Aktuális workspace
+      workspace_id: currentWorkspaceId,
+      project_id: null,
+      contact_id: null,
     });
     setIsTaskModalOpen(true);
   };
@@ -109,6 +112,7 @@ export default function DashboardPage() {
           recurrenceInterval: updatedTask.recurrence_interval,
           workspaceId: updatedTask.workspace_id,
           projectId: updatedTask.project_id,
+          contactId: updatedTask.contact_id,
         });
 
         // Refresh task list instead of full page reload

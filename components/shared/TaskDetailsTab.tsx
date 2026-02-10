@@ -23,6 +23,9 @@ interface TaskDetailsTabProps {
     projectId: string;
     setProjectId: (v: string) => void;
     workspaceProjects: Array<{ id: string; name: string; icon?: string | null }>;
+    contactId: string;
+    setContactId: (v: string) => void;
+    workspaceContacts: Array<{ id: string; name: string; avatar_color: string | null }>;
 }
 
 const statusOptions = [
@@ -49,6 +52,8 @@ export function TaskDetailsTab({
     recurrenceInterval, setRecurrenceInterval,
     projectId, setProjectId,
     workspaceProjects,
+    contactId, setContactId,
+    workspaceContacts,
 }: TaskDetailsTabProps) {
     return (
         <div className="space-y-5">
@@ -107,6 +112,26 @@ export function TaskDetailsTab({
                     {workspaceProjects.map((p) => (
                         <option key={p.id} value={p.id}>
                             {p.icon ? `${p.icon} ` : ''}{p.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Contact Selector (CRM) */}
+            <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-slate-300 flex items-center gap-2">
+                    <User size={14} />
+                    Kapcsolat (Ügyfél/Partner)
+                </label>
+                <select
+                    value={contactId}
+                    onChange={(e) => setContactId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                    <option value="">Nincs kapcsolat kiválasztva</option>
+                    {workspaceContacts.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name}
                         </option>
                     ))}
                 </select>

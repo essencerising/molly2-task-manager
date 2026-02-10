@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores';
 import { fetchSubtasks } from '@/lib/subtasksService';
 import { fetchComments } from '@/lib/commentsService';
+import { fetchContacts } from '@/lib/contactsService';
 import { TaskDetailsTab } from './TaskDetailsTab';
 import { TaskSubtasksTab, Subtask } from './TaskSubtasksTab';
 import { TaskCommentsTab, Comment } from './TaskCommentsTab';
@@ -26,6 +27,7 @@ export interface TaskData {
     recurrence_interval?: number;
     workspace_id?: string;
     project_id?: string | null;
+    contact_id?: string | null;
 }
 
 interface TaskModalProps {
@@ -54,6 +56,8 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
     const [recurrenceType, setRecurrenceType] = useState<TaskData['recurrence_type']>('none');
     const [recurrenceInterval, setRecurrenceInterval] = useState(1);
     const [projectId, setProjectId] = useState('');
+    const [contactId, setContactId] = useState('');
+    const [workspaceContacts, setWorkspaceContacts] = useState<any[]>([]);
 
     // Tab data
     const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -75,6 +79,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             setRecurrenceType(task.recurrence_type || 'none');
             setRecurrenceInterval(task.recurrence_interval || 1);
             setProjectId(task.project_id || '');
+            setContactId(task.contact_id || '');
 
             if (task.id) {
                 fetchSubtasks(task.id)
@@ -91,9 +96,19 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             setTitle(''); setDescription(''); setStatus('todo');
             setDueDate(''); setFollowUpDate('');
             setRecurrenceType('none'); setRecurrenceInterval(1);
-            setProjectId(''); setSubtasks([]); setComments([]);
+            setRecurrenceType('none'); setRecurrenceInterval(1);
+            setProjectId(''); setContactId(''); setSubtasks([]); setComments([]);
         }
     }, [task]);
+
+    // Load contacts
+    useEffect(() => {
+        if (effectiveWorkspaceId) {
+            fetchContacts(effectiveWorkspaceId)
+                .then(setWorkspaceContacts)
+                .catch(err => console.error('Failed to load contacts:', err));
+        }
+    }, [effectiveWorkspaceId]);
 
     // Handlers
     const handleSave = async () => {
@@ -113,6 +128,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                 recurrence_type: recurrenceType,
                 recurrence_interval: recurrenceInterval,
                 project_id: projectId || null,
+                contact_id: contactId || null,
                 workspace_id: task?.workspace_id || currentWorkspace?.id,
             };
             onSave?.(updatedTask);
@@ -185,6 +201,8 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                         recurrenceInterval={recurrenceInterval} setRecurrenceInterval={setRecurrenceInterval}
                         projectId={projectId} setProjectId={setProjectId}
                         workspaceProjects={workspaceProjects}
+                        contactId={contactId} setContactId={setContactId}
+                        workspaceContacts={workspaceContacts}
                     />
                 )}
 

@@ -21,6 +21,8 @@ export interface TaskItemData {
     workspaceName?: string; // ÚJ
     workspaceIcon?: string | null; // ÚJ
     workspaceColor?: string; // ÚJ
+    contactName?: string; // ÚJ (CRM)
+    contactAvatarColor?: string | null; // ÚJ (CRM)
 }
 
 interface TaskItemProps {
@@ -124,6 +126,23 @@ export function TaskItem({ task, onClick, compact = false }: TaskItemProps) {
                                 {format(new Date(task.dueDate), 'MMM d.', { locale: hu })}
                                 {isOverdue && <span className="text-[10px]">(lejárt)</span>}
                             </span>
+                        )}
+
+                        {/* Contact badge (CRM) */}
+                        {task.contactName && (
+                            <Badge
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1.5 border-slate-700/50 bg-slate-800/30 text-slate-300 hover:bg-slate-700/50 pr-2 pl-1 py-0.5"
+                            >
+                                <div
+                                    className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                                    style={{ backgroundColor: task.contactAvatarColor || '#6366F1' }}
+                                >
+                                    {task.contactName.trim()[0].toUpperCase()}
+                                </div>
+                                <span className="truncate max-w-[100px]">{task.contactName}</span>
+                            </Badge>
                         )}
 
                         {/* Assignee */}

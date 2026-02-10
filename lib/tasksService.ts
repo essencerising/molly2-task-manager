@@ -18,8 +18,9 @@ interface TaskRow {
   created_at: string;
   updated_at: string;
   assignee_id: string | null;
-  workspace_id: string; // ÚJ
-  project_id: string | null; // ÚJ
+  workspace_id: string;
+  project_id: string | null;
+  contact_id: string | null; // ÚJ (CRM)
   projects?: {
     id: string;
     name: string;
@@ -35,6 +36,11 @@ interface TaskRow {
     id: string;
     name: string;
     email: string | null;
+  } | null;
+  contacts?: { // ÚJ (CRM)
+    id: string;
+    name: string;
+    avatar_color: string | null;
   } | null;
 }
 
@@ -55,7 +61,7 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
 
   const { data, error, count } = await supabase
     .from('tasks')
-    .select('*, assignee:people!tasks_assignee_id_fkey(id, name, email), projects(id, name, color), workspaces(id, name, color, icon)', { count: 'exact' })
+    .select('*, assignee:people!tasks_assignee_id_fkey(id, name, email), projects(id, name, color), workspaces(id, name, color, icon), contacts(id, name, avatar_color)', { count: 'exact' })
     .is('archived_at', null)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -73,13 +79,16 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
     area: row.area,
     workspace_id: row.workspace_id,
     project_id: row.project_id,
-    projectName: row.projects?.name || row.area, // Fallback to area if no project
+    contact_id: row.contact_id, // ÚJ
+    projectName: row.projects?.name || row.area,
     projectColor: row.projects?.color || '#6366F1',
-    workspaceName: row.workspaces?.name, // ÚJ
-    workspaceColor: row.workspaces?.color, // ÚJ
-    workspaceIcon: row.workspaces?.icon, // ÚJ
+    workspaceName: row.workspaces?.name,
+    workspaceColor: row.workspaces?.color,
+    workspaceIcon: row.workspaces?.icon,
+    contactName: row.contacts?.name, // ÚJ 
+    contactAvatarColor: row.contacts?.avatar_color, // ÚJ
     description: row.description,
-    assigneeEmail: row.assignee_email, // Megtartjuk a mezőt, de deprecated
+    assigneeEmail: row.assignee_email,
     delegatorEmail: row.delegator_email,
     dueDate: row.due_date,
     followUpDate: row.follow_up_at,
@@ -112,6 +121,7 @@ interface CreateTaskInput {
   recurrenceInterval?: number | null;
   workspaceId?: string;
   projectId?: string | null;
+  contactId?: string | null; // ÚJ (CRM)
 }
 
 export async function createTask(input: CreateTaskInput) {
@@ -126,7 +136,8 @@ export async function createTask(input: CreateTaskInput) {
     recurrenceType,
     recurrenceInterval,
     workspaceId,
-    projectId
+    projectId,
+    contactId
   } = input;
 
   const payload: Partial<Task> = {
@@ -134,7 +145,8 @@ export async function createTask(input: CreateTaskInput) {
     area,
     status: 'todo',
     workspace_id: workspaceId,
-    project_id: projectId
+    project_id: projectId,
+    contact_id: contactId
   };
 
   if (dueDate) {
@@ -298,6 +310,7 @@ interface UpdateTaskDetailsInput {
   recurrenceType?: Task['recurrence_type'];
   recurrenceInterval?: number | null;
   projectId?: string | null;
+  contactId?: string | null;
 }
 
 export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
@@ -333,6 +346,9 @@ export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
   }
   if (input.projectId !== undefined) {
     payload.project_id = input.projectId;
+  }
+  if (input.contactId !== undefined) {
+    payload.contact_id = input.contactId;
   }
   // Support both dueDate and due_date
   const dueDateValue = (input as any).dueDate !== undefined ? (input as any).dueDate : (input as any).due_date;
@@ -607,4 +623,40 @@ export async function createComment(taskId: string, content: string, authorEmail
 
   if (error) throw error;
   return data;
+}
+
+// ------------------
+// Tasks for Contact (CRM)
+// ------------------
+
+export async function fetchTasksByContact(contactId: string) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(`
+      id,
+      title,
+      status,
+      due_date,
+      projects (
+        name,
+        color
+      )
+    `)
+    .eq('contact_id', contactId)
+    .order('due_date', { ascending: true, nullsFirst: false });
+
+  if (error) {
+    console.error('fetchTasksByContact error:', error);
+    throw error;
+  }
+
+  // Normalize project data structure
+  return (data || []).map((t: any) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    dueDate: t.due_date,
+    projectName: t.projects?.name,
+    projectColor: t.projects?.color
+  }));
 }

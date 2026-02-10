@@ -27,6 +27,15 @@ export interface Task {
   recurrence_interval?: number | null;
   workspace_id?: string; // Opcionális a migráció alatt, de DB-ben kötelező lesz
   project_id?: string | null;
+  contact_id?: string | null; // ÚJ (CRM)
+  // Ezek a mezők a join-ból jönnek, nem közvetlen DB oszlopok a tasks táblában
+  projectName?: string;
+  projectColor?: string | null;
+  workspaceName?: string;
+  workspaceColor?: string | null;
+  workspaceIcon?: string | null;
+  contactName?: string; // ÚJ (CRM)
+  contactAvatarColor?: string | null; // ÚJ (CRM)
 }
 
 export interface Subtask {

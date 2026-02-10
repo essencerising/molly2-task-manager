@@ -9,6 +9,7 @@ import {
     fetchContacts, createContact, updateContact, deleteContact,
     Contact, randomAvatarColor
 } from '@/lib/contactsService';
+import { fetchTasksByContact } from '@/lib/tasksService';
 import { toast } from 'sonner';
 import {
     Plus, Search, Star, StarOff, Trash2, Mail, Phone, Building2,
@@ -25,6 +26,7 @@ export default function ContactsPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+    const [relatedTasks, setRelatedTasks] = useState<any[]>([]);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -53,6 +55,17 @@ export default function ContactsPage() {
         }
         load();
     }, [currentWorkspaceId]);
+
+    // Load related tasks
+    useEffect(() => {
+        if (selectedContact?.id) {
+            fetchTasksByContact(selectedContact.id)
+                .then(setRelatedTasks)
+                .catch(err => console.error('Failed to load related tasks:', err));
+        } else {
+            setRelatedTasks([]);
+        }
+    }, [selectedContact]);
 
     const handleCreate = async () => {
         if (!currentWorkspaceId || !formData.name.trim()) {

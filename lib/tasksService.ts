@@ -344,11 +344,16 @@ export async function updateTaskDetails(input: UpdateTaskDetailsInput) {
   if (input.recurrenceInterval !== undefined) {
     payload.recurrence_interval = input.recurrenceInterval;
   }
-  if (input.projectId !== undefined) {
-    payload.project_id = input.projectId;
+  // Support both camelCase and snake_case for projectId
+  const projectIdValue = input.projectId !== undefined ? input.projectId : (input as any).project_id;
+  if (projectIdValue !== undefined) {
+    payload.project_id = projectIdValue;
   }
-  if (input.contactId !== undefined) {
-    payload.contact_id = input.contactId;
+
+  // Support both camelCase and snake_case for contactId
+  const contactIdValue = input.contactId !== undefined ? input.contactId : (input as any).contact_id;
+  if (contactIdValue !== undefined) {
+    payload.contact_id = contactIdValue;
   }
   // Support both dueDate and due_date
   const dueDateValue = (input as any).dueDate !== undefined ? (input as any).dueDate : (input as any).due_date;

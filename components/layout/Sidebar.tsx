@@ -14,7 +14,8 @@ import {
     ChevronRight,
     Building2,
     Menu,
-    X
+    X,
+    StickyNote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore, useWorkspaceStore } from '@/stores';
@@ -26,6 +27,7 @@ const mainNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/calendar', label: 'Naptár', icon: Calendar },
     { href: '/dashboard/projects', label: 'Projektek', icon: FolderKanban },
+    { href: '/dashboard/notes', label: 'Jegyzetek', icon: StickyNote },
 ];
 
 export function Sidebar() {

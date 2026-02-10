@@ -1,8 +1,8 @@
 // Task Item Component - For lists
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
-import { CheckCircle2, Circle, Clock, User, Paperclip, MessageSquare } from 'lucide-react';
-import { format } from 'date-fns';
+import { CheckCircle2, Circle, Clock, User, Paperclip, MessageSquare, AlertTriangle } from 'lucide-react';
+import { format, isPast, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale/hu';
 
 export interface TaskItemData {
@@ -44,6 +44,7 @@ const statusIcons = {
 export function TaskItem({ task, onClick, compact = false }: TaskItemProps) {
     const StatusIcon = statusIcons[task.status];
     const isDone = task.status === 'done';
+    const isOverdue = !isDone && task.dueDate && isPast(startOfDay(new Date(task.dueDate))) && new Date(task.dueDate) < startOfDay(new Date());
 
     return (
         <button
@@ -52,7 +53,8 @@ export function TaskItem({ task, onClick, compact = false }: TaskItemProps) {
                 'w-full text-left rounded-xl border border-slate-800 bg-slate-900/60 p-4',
                 'hover:border-indigo-500/50 hover:bg-slate-800/60 hover:shadow-lg hover:shadow-indigo-500/5',
                 'transition-all duration-200 group',
-                compact && 'p-3'
+                compact && 'p-3',
+                isOverdue && 'border-red-500/40 bg-red-950/20'
             )}
         >
             <div className="flex items-start gap-3">
@@ -114,9 +116,13 @@ export function TaskItem({ task, onClick, compact = false }: TaskItemProps) {
 
                         {/* Due date */}
                         {task.dueDate && (
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                                <Clock size={12} />
+                            <span className={cn(
+                                'text-xs flex items-center gap-1',
+                                isOverdue ? 'text-red-400 font-medium' : 'text-slate-500'
+                            )}>
+                                {isOverdue ? <AlertTriangle size={12} /> : <Clock size={12} />}
                                 {format(new Date(task.dueDate), 'MMM d.', { locale: hu })}
+                                {isOverdue && <span className="text-[10px]">(lejárt)</span>}
                             </span>
                         )}
 

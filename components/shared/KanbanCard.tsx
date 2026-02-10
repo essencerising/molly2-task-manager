@@ -5,8 +5,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
-import { Clock, User, MessageSquare, CheckSquare, GripVertical } from 'lucide-react';
-import { format } from 'date-fns';
+import { Clock, User, MessageSquare, CheckSquare, GripVertical, AlertTriangle } from 'lucide-react';
+import { format, isPast, startOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale/hu';
 import { TaskItemData } from './TaskItem';
 
@@ -32,6 +32,8 @@ export function KanbanCard({ task, onClick, isDragging }: KanbanCardProps) {
     };
 
     const isBeingDragged = isDragging || isSortableDragging;
+    const isDone = task.status === 'done';
+    const isOverdue = !isDone && task.dueDate && isPast(startOfDay(new Date(task.dueDate))) && new Date(task.dueDate) < startOfDay(new Date());
 
     return (
         <div
@@ -41,7 +43,8 @@ export function KanbanCard({ task, onClick, isDragging }: KanbanCardProps) {
                 'group rounded-xl border border-slate-800 bg-slate-900/80 p-3 cursor-pointer',
                 'hover:border-indigo-500/50 hover:bg-slate-800/80 hover:shadow-lg hover:shadow-indigo-500/5',
                 'transition-all duration-200 touch-manipulation',
-                isBeingDragged && 'opacity-50 shadow-2xl border-indigo-500 bg-slate-800'
+                isBeingDragged && 'opacity-50 shadow-2xl border-indigo-500 bg-slate-800',
+                isOverdue && !isBeingDragged && 'border-red-500/40 bg-red-950/20'
             )}
             onClick={onClick}
         >
@@ -101,8 +104,11 @@ export function KanbanCard({ task, onClick, isDragging }: KanbanCardProps) {
 
                         {/* Due date */}
                         {task.dueDate && (
-                            <span className="flex items-center gap-1">
-                                <Clock size={10} />
+                            <span className={cn(
+                                'flex items-center gap-1',
+                                isOverdue ? 'text-red-400 font-medium' : 'text-slate-500'
+                            )}>
+                                {isOverdue ? <AlertTriangle size={10} /> : <Clock size={10} />}
                                 {format(new Date(task.dueDate), 'd. MMM', { locale: hu })}
                             </span>
                         )}

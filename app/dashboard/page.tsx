@@ -229,12 +229,35 @@ export default function DashboardPage() {
     return filteredTasks.filter(t => t.status === status);
   };
 
+  // Greeting based on time of day
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Jó reggelt' : hour < 18 ? 'Szép napot' : 'Jó estét';
+  const todayTasks = tasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), today));
+  const doneTodayCount = todayTasks.filter(t => t.status === 'done').length;
+
   return (
     <DashboardLayout
       title="Dashboard"
       subtitle={format(today, "yyyy. MMMM d., EEEE", { locale: hu })}
     >
       <div className="space-y-8 max-w-6xl mx-auto">
+        {/* Welcome Section */}
+        <section className="bg-gradient-to-r from-indigo-600/10 via-slate-900/50 to-slate-900/50 rounded-xl border border-indigo-500/20 p-4 md:p-6">
+          <h2 className="text-lg md:text-xl font-bold text-slate-100 mb-1">
+            {greeting}! 👋
+          </h2>
+          <p className="text-sm text-slate-400">
+            {stats.overdue > 0 && (
+              <span className="text-red-400 font-medium">⚠️ {stats.overdue} lejárt feladatod van. </span>
+            )}
+            {stats.today > 0 ? (
+              <>Ma <span className="text-indigo-300 font-medium">{stats.today}</span> feladatod van{doneTodayCount > 0 && <>, ebből <span className="text-emerald-400 font-medium">{doneTodayCount} kész</span></>}.</>
+            ) : (
+              <span className="text-emerald-400">Nincs mai feladatod – pihenj vagy tervezz előre! 🎉</span>
+            )}
+          </p>
+        </section>
+
         {/* Focus Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <FocusCard

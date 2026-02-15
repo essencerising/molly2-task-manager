@@ -286,7 +286,7 @@ export async function deleteProject(id: string): Promise<void> {
 // ------------------
 
 // Invite (Add) member by email
-export async function inviteMember(workspaceId: string, email: string, role: WorkspaceMemberRole = 'member'): Promise<{ success: boolean; message: string }> {
+export async function inviteMember(workspaceId: string, email: string, role: WorkspaceMemberRole = 'member'): Promise<{ success: boolean; message: string; user_id?: string }> {
     const { data, error } = await supabase.rpc('add_team_member_by_email', {
         p_workspace_id: workspaceId,
         p_email: email,
@@ -298,6 +298,6 @@ export async function inviteMember(workspaceId: string, email: string, role: Wor
         return { success: false, message: error.message };
     }
 
-    // The RPC returns a JSON object with success/message
-    return data as { success: boolean; message: string };
+    // The RPC returns a JSON object with success/message/user_id
+    return data as { success: boolean; message: string; user_id?: string };
 }

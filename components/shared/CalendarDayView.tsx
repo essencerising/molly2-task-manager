@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { format, addDays, subDays, isToday } from 'date-fns';
+import { format, addDays, subDays, isToday, startOfDay, endOfDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Button } from '@/components/ui';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -44,8 +44,15 @@ export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange,
 
     const dayEvents = useMemo(() => {
         if (!events) return [];
-        const dateKey = format(currentDate, 'yyyy-MM-dd');
-        return events.filter(e => e.start_time.split('T')[0] === dateKey);
+        const dayStart = startOfDay(currentDate);
+        const dayEnd = endOfDay(currentDate);
+
+        return events.filter(e => {
+            const eventStart = new Date(e.start_time);
+            const eventEnd = new Date(e.end_time);
+            // Check for overlap: Event starts before day ends AND Event ends after day starts
+            return eventStart <= dayEnd && eventEnd >= dayStart;
+        });
     }, [events, currentDate]);
 
     return (

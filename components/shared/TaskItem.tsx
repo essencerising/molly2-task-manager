@@ -23,6 +23,7 @@ export interface TaskItemData {
     workspaceColor?: string; // ÚJ
     contactName?: string; // ÚJ (CRM)
     contactAvatarColor?: string | null; // ÚJ (CRM)
+    assigneeId?: string | null; // For filtering
 }
 
 interface TaskItemProps {

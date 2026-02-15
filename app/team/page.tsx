@@ -20,11 +20,31 @@ export default function TeamPage() {
     const [inviteEmail, setInviteEmail] = useState('');
     const [isInviting, setIsInviting] = useState(false);
 
+    const [currentUser, setCurrentUser] = useState<Person | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Get current user ID
+        const getCurrentUser = async () => {
+            const { supabase } = await import('@/lib/supabaseClient');
+            const { data } = await supabase.auth.getUser();
+            setUserId(data.user?.id || null);
+        };
+        getCurrentUser();
+    }, []);
+
     useEffect(() => {
         if (currentWorkspaceId) {
             loadPeople();
         }
     }, [currentWorkspaceId]);
+
+    useEffect(() => {
+        if (userId && people.length > 0) {
+            const me = people.find(p => p.id === userId);
+            setCurrentUser(me || null);
+        }
+    }, [userId, people]);
 
     const loadPeople = async () => {
         setLoading(true);
@@ -65,6 +85,8 @@ export default function TeamPage() {
         }
     };
 
+    const isAdminOrOwner = currentUser?.role === 'admin' || currentUser?.role === 'owner';
+
     return (
         <DashboardLayout
             title="Csapat kezelése"
@@ -78,10 +100,12 @@ export default function TeamPage() {
                         <h2 className="text-lg font-semibold text-slate-100">Munkatársak ({people.length})</h2>
                         <p className="text-sm text-slate-400">A projektekhez és feladatokhoz rendelhető személyek</p>
                     </div>
-                    <Button onClick={() => setIsInviteModalOpen(true)}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Új munkatárs
-                    </Button>
+                    {isAdminOrOwner && (
+                        <Button onClick={() => setIsInviteModalOpen(true)}>
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Új munkatárs
+                        </Button>
+                    )}
                 </div>
 
                 {/* Members List */}

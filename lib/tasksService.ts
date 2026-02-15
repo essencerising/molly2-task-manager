@@ -61,7 +61,7 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
 
   const { data, error, count } = await supabase
     .from('tasks')
-    .select('*, assignee:people!tasks_assignee_id_fkey(id, name, email), projects(id, name, color), workspaces(id, name, color, icon), contacts(id, name, avatar_color)', { count: 'exact' })
+    .select('*, assignee_id, assignee:people!tasks_assignee_id_fkey(id, name, email), projects(id, name, color), workspaces(id, name, color, icon), contacts(id, name, avatar_color)', { count: 'exact' })
     .is('archived_at', null)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -88,7 +88,8 @@ export async function fetchTasks({ page = 1, limit = 20 }: FetchTasksOptions = {
     contactName: row.contacts?.name, // ÚJ 
     contactAvatarColor: row.contacts?.avatar_color, // ÚJ
     description: row.description,
-    assigneeEmail: row.assignee_email,
+    assigneeEmail: row.assignee_email || row.assignee?.email,
+    assigneeName: row.assignee?.name, // Add name explicitly
     delegatorEmail: row.delegator_email,
     dueDate: row.due_date,
     followUpDate: row.follow_up_at,
@@ -395,8 +396,8 @@ export async function fetchAreas() {
   }
 
   const allAreas = (data ?? [])
-    .map((row) => row.area)
-    .filter((area): area is TaskArea => Boolean(area));
+    .map((row: any) => row.area)
+    .filter((area: any): area is TaskArea => Boolean(area));
 
   const uniqueAreas = Array.from(new Set(allAreas));
 

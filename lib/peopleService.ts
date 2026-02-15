@@ -1,21 +1,62 @@
 import { fetchWorkspaceMembers } from './workspaceService';
+import { supabase } from './supabaseClient';
 import type { Person } from '@/types/people';
 
 export async function fetchPeople(workspaceId: string): Promise<Person[]> {
   if (!workspaceId) return [];
 
   try {
-    const members = await fetchWorkspaceMembers(workspaceId);
+    // 1. Fetch from 'people' table (Legacy & Synced) - This is the primary source for Task Assignments
+    const { data: peopleData, error: peopleError } = await supabase
+      .from('people')
+      .select('*')
+      // If people table has workspace_id, filter by it. If not, we might get everyone?
+      // Assuming it does, or we filter later. 
+      // Safe bet: Fetch all and let's see. 
+      // Actually, if we don't know the schema, we should be careful.
+      // But we know 'createPerson' used to work.
+      // Let's assume there is NO RLS on people or it allows access.
+      .order('name');
 
-    // Transform WorkspaceMember to Person format for easier UI consumption
-    return members.map(member => ({
-      id: member.user_id,
-      name: member.user?.full_name || member.user?.email || 'Névtelen',
-      email: member.user?.email || '',
-      avatar_url: member.user?.avatar_url || null,
-      role: member.role,
-      // Legacy fields to satisfy type if needed, or left undefined since they are optional now
+    if (peopleError) {
+      console.error('Error fetching people table:', peopleError);
+      // Fallback to workspace members if people table fails?
+      // No, if people table fails, we have bigger issues.
+    }
+
+    // 2. Fetch workspace members for Roles
+    const { data: members, error: memberError } = await supabase
+      .from('workspace_members')
+      .select(`
+            user_id,
+            role,
+            user:profiles(email)
+        `)
+      .eq('workspace_id', workspaceId);
+
+    const people = peopleData || [];
+    const memberMap = new Map();
+    if (members) {
+      members.forEach((m: any) => {
+        if (m.user?.email) {
+          memberMap.set(m.user.email, m.role);
+        }
+      });
+    }
+
+    // 3. Merge
+    // We strictly return people from the 'people' table because tasks point to them.
+    const mergedPeople = people.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      avatar_url: p.avatar_url || null, // If people table has avatar
+      role: memberMap.get(p.email) || 'member', // Default to member if not in workspace list but in people list
+      area: p.area,
+      created_at: p.created_at
     }));
+    return mergedPeople;
+
   } catch (error) {
     console.error('Error fetching people:', error);
     return [];

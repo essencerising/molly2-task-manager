@@ -140,6 +140,7 @@ export default function DashboardPage() {
           workspaceName: row.workspaceName,
           workspaceIcon: row.workspaceIcon,
           workspaceColor: row.workspaceColor, // ÚJ - workspace színek
+          assigneeId: row.assignee_id, // Populate assigneeId
         }));
         setTasks(normalized);
 
@@ -181,18 +182,21 @@ export default function DashboardPage() {
     async function loadTasks() {
       try {
         const result = await fetchTasks({ limit: 100 });
-        const normalized: TaskItemData[] = (result.data ?? []).map((row: any) => ({
-          id: row.id,
-          title: row.title,
-          status: row.status,
-          dueDate: row.dueDate,
-          assigneeName: row.assigneeEmail?.split('@')[0],
-          projectName: row.projectName,
-          projectColor: row.projectColor,
-          workspaceName: row.workspaceName,
-          workspaceIcon: row.workspaceIcon,
-          workspaceColor: row.workspaceColor, // ÚJ - workspace színek
-        }));
+        const normalized: TaskItemData[] = (result.data ?? []).map((row: any) => {
+          return {
+            id: row.id,
+            title: row.title,
+            status: row.status,
+            dueDate: row.dueDate,
+            assigneeName: row.assigneeName || row.assigneeEmail?.split('@')[0], // Use explicit name if available
+            projectName: row.projectName,
+            projectColor: row.projectColor,
+            workspaceName: row.workspaceName,
+            workspaceIcon: row.workspaceIcon,
+            workspaceColor: row.workspaceColor, // ÚJ - workspace színek
+            assigneeId: row.assignee_id, // Populate assigneeId
+          };
+        });
         setTasks(normalized);
       } catch (err) {
         console.error('Failed to load tasks:', err);
@@ -217,18 +221,26 @@ export default function DashboardPage() {
 
   // Filter tasks
   const getFilteredTasks = () => {
+    let filtered = tasks;
+
+    // Filter by assignee
+    if (assigneeFilter !== 'all') {
+      filtered = filtered.filter(t => t.assigneeId === assigneeFilter);
+    }
+
+    // Filter by active view (today/followup/overdue)
     switch (activeFilter) {
       case 'today':
-        return tasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), today));
+        return filtered.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), today));
       case 'followup':
-        return tasks.filter(t => t.status !== 'done' && t.dueDate);
+        return filtered.filter(t => t.status !== 'done' && t.dueDate);
       case 'overdue':
-        return tasks.filter(t => {
+        return filtered.filter(t => {
           if (!t.dueDate || t.status === 'done') return false;
           return new Date(t.dueDate) < startOfDay(today);
         });
       default:
-        return tasks;
+        return filtered;
     }
   };
 

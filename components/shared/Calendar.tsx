@@ -143,9 +143,23 @@ export function Calendar({ tasks, events = [], onTaskClick, onEventClick, onTask
     const eventsByDate = useMemo(() => {
         const grouped = new Map<string, CalendarEvent[]>();
         events.forEach(event => {
-            const dateKey = event.start_time.split('T')[0];
-            if (!grouped.has(dateKey)) grouped.set(dateKey, []);
-            grouped.get(dateKey)!.push(event);
+            const startDate = new Date(event.start_time);
+            const endDate = new Date(event.end_time);
+
+            // Handle potentially invalid dates
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
+
+            const days = eachDayOfInterval({ start: startDate, end: endDate });
+
+            days.forEach(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+                // Avoid duplicates if interval includes same day multiple times (unlikely with eachDayOfInterval but safe)
+                const dayEvents = grouped.get(dateKey)!;
+                if (!dayEvents.some(e => e.id === event.id)) {
+                    dayEvents.push(event);
+                }
+            });
         });
         return grouped;
     }, [events]);

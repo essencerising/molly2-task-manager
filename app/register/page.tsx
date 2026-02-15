@@ -80,7 +80,7 @@ export default function RegisterPage() {
                     </p>
                     <div className="pt-4">
                         <Link href="/login">
-                            <Button className="w-full" variant="outline">
+                            <Button className="w-full" variant="secondary">
                                 Vissza a bejelentkezéshez
                             </Button>
                         </Link>

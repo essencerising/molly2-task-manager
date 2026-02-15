@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchTasks } from '@/lib/tasksService';
-import { fetchPeople, Person } from '@/lib/peopleService';
+import { fetchPeople } from '@/lib/peopleService';
+import type { Person } from '@/types/people';
 import { isSameDay, addDays, isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 import { hu } from 'date-fns/locale/hu';
 import { toast } from 'sonner';

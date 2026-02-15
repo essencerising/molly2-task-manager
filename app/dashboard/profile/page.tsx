@@ -156,7 +156,7 @@ export default function ProfilePage() {
 
                         <Button
                             type="button"
-                            variant="destructive"
+                            variant="danger"
                             onClick={handleLogout}
                             className="flex-1"
                         >

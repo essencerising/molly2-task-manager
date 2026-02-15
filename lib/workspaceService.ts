@@ -8,6 +8,7 @@ import type {
     UpdateWorkspaceInput,
     CreateProjectInput,
     UpdateProjectInput,
+    WorkspaceMemberRole,
 } from '@/types/workspace';
 
 // ------------------
@@ -141,13 +142,16 @@ export async function fetchWorkspaceMembers(workspaceId: string): Promise<Worksp
         .from('workspace_members')
         .select(`
       *,
-      user:profiles(id, email, name, avatar_url)
+      user:profiles(id, email, full_name, avatar_url)
     `)
         .eq('workspace_id', workspaceId)
         .order('joined_at', { ascending: true });
 
     if (error) {
-        console.error('fetchWorkspaceMembers error:', error);
+        console.error('fetchWorkspaceMembers error object:', error); // Log raw object
+        console.error('fetchWorkspaceMembers error message:', error.message);
+        console.error('fetchWorkspaceMembers error code:', error.code);
+        console.error('fetchWorkspaceMembers error details:', error.details);
         throw error;
     }
 
@@ -275,4 +279,25 @@ export async function deleteProject(id: string): Promise<void> {
         console.error('deleteProject error:', error);
         throw error;
     }
+}
+
+// ------------------
+// Team Management
+// ------------------
+
+// Invite (Add) member by email
+export async function inviteMember(workspaceId: string, email: string, role: WorkspaceMemberRole = 'member'): Promise<{ success: boolean; message: string }> {
+    const { data, error } = await supabase.rpc('add_team_member_by_email', {
+        p_workspace_id: workspaceId,
+        p_email: email,
+        p_role: role,
+    });
+
+    if (error) {
+        console.error('inviteMember error:', error);
+        return { success: false, message: error.message };
+    }
+
+    // The RPC returns a JSON object with success/message
+    return data as { success: boolean; message: string };
 }

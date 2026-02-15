@@ -303,6 +303,7 @@ export async function archiveTask(taskId: string) {
 interface UpdateTaskDetailsInput {
   id: string;
   title?: string;
+  dueDate?: string | null;
   description?: string | null;
   assigneeId?: string | null;
   followUpAt?: string | null;

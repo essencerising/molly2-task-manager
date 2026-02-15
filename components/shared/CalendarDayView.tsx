@@ -9,11 +9,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TaskItemData } from './TaskItem';
 import { cn } from '@/lib/utils';
 
+import { CalendarEvent } from '@/lib/eventsService';
+
 interface CalendarDayViewProps {
     tasks: TaskItemData[];
     onTaskClick: (task: TaskItemData) => void;
     currentDate: Date;
     onDateChange: (date: Date) => void;
+    events?: CalendarEvent[];
+    onEventClick?: (event: CalendarEvent) => void;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -22,7 +26,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
     done: { label: 'Kész', color: 'bg-emerald-600' },
 };
 
-export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange }: CalendarDayViewProps) {
+export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange, events = [], onEventClick }: CalendarDayViewProps) {
     const dayTasks = useMemo(() => {
         const dateKey = format(currentDate, 'yyyy-MM-dd');
         return tasks.filter(t => t.dueDate?.split('T')[0] === dateKey);
@@ -37,6 +41,12 @@ export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange 
         });
         return groups;
     }, [dayTasks]);
+
+    const dayEvents = useMemo(() => {
+        if (!events) return [];
+        const dateKey = format(currentDate, 'yyyy-MM-dd');
+        return events.filter(e => e.start_time.split('T')[0] === dateKey);
+    }, [events, currentDate]);
 
     return (
         <div className="flex flex-col h-full">
@@ -75,9 +85,9 @@ export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange 
                 ))}
             </div>
 
-            {/* Tasks */}
+            {/* Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {dayTasks.length === 0 ? (
+                {(dayTasks.length === 0 && dayEvents.length === 0) ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                         <span className="text-4xl mb-3">☀️</span>
                         <p className="text-lg font-semibold text-slate-200 mb-1">Szabad nap!</p>
@@ -85,6 +95,48 @@ export function CalendarDayView({ tasks, onTaskClick, currentDate, onDateChange 
                     </div>
                 ) : (
                     <div className="space-y-6">
+                        {/* Events Section */}
+                        {dayEvents.length > 0 && (
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="w-3 h-3 rounded-full bg-indigo-500" />
+                                    <h3 className="text-sm font-semibold text-slate-300">Események</h3>
+                                    <span className="text-xs text-slate-500">({dayEvents.length})</span>
+                                </div>
+                                <div className="space-y-2">
+                                    {dayEvents.map((event) => (
+                                        <button
+                                            key={event.id}
+                                            onClick={() => onEventClick?.(event)}
+                                            className="w-full text-left"
+                                        >
+                                            <div className="p-3 rounded-lg transition-all hover:shadow-lg hover:scale-[1.005] flex items-center gap-3 bg-indigo-600/10 border-l-4 border-indigo-500">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs font-mono text-indigo-300 bg-indigo-900/50 px-1.5 py-0.5 rounded">
+                                                            {event.is_all_day
+                                                                ? 'Egész nap'
+                                                                : `${event.start_time.split('T')[1].substring(0, 5)} - ${event.end_time.split('T')[1].substring(0, 5)}`
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm font-medium text-indigo-100 truncate">
+                                                        {event.title}
+                                                    </p>
+                                                    {event.location && (
+                                                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                                            📍 {event.location}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tasks Groups */}
                         {Object.entries(STATUS_LABELS).map(([statusKey, { label, color }]) => {
                             const statusTasks = grouped[statusKey];
                             if (!statusTasks?.length) return null;

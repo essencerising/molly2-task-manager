@@ -26,6 +26,9 @@ interface TaskDetailsTabProps {
     contactId: string;
     setContactId: (v: string) => void;
     workspaceContacts: Array<{ id: string; name: string; avatar_color: string | null }>;
+    assigneeId: string;
+    setAssigneeId: (v: string) => void;
+    people: Array<{ id: string; name: string }>;
 }
 
 const statusOptions = [
@@ -54,6 +57,8 @@ export function TaskDetailsTab({
     workspaceProjects,
     contactId, setContactId,
     workspaceContacts,
+    assigneeId, setAssigneeId,
+    people,
 }: TaskDetailsTabProps) {
     return (
         <div className="space-y-5">
@@ -97,24 +102,47 @@ export function TaskDetailsTab({
                 </div>
             </div>
 
-            {/* Project Selector */}
-            <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-300 flex items-center gap-2">
-                    <FolderKanban size={14} />
-                    Projekt
-                </label>
-                <select
-                    value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">Nincs projekt</option>
-                    {workspaceProjects.map((p) => (
-                        <option key={p.id} value={p.id}>
-                            {p.icon ? `${p.icon} ` : ''}{p.name}
-                        </option>
-                    ))}
-                </select>
+            {/* Row: Project & Assignee */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Project Selector */}
+                <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-300 flex items-center gap-2">
+                        <FolderKanban size={14} />
+                        Projekt
+                    </label>
+                    <select
+                        value={projectId}
+                        onChange={(e) => setProjectId(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="">Nincs projekt</option>
+                        {workspaceProjects.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.icon ? `${p.icon} ` : ''}{p.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Assignee Selector */}
+                <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-300 flex items-center gap-2">
+                        <User size={14} />
+                        Felelős
+                    </label>
+                    <select
+                        value={assigneeId}
+                        onChange={(e) => setAssigneeId(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="">Nincs felelős</option>
+                        {people.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* Contact Selector (CRM) */}

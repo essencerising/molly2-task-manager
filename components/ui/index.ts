@@ -15,3 +15,6 @@ export { Badge } from './Badge';
 export type { BadgeProps } from './Badge';
 
 export { Skeleton } from './Skeleton';
+
+export { Label } from './Label';
+

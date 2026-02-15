@@ -17,11 +17,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TaskItemData } from './TaskItem';
 import { cn } from '@/lib/utils';
 
+import { CalendarEvent } from '@/lib/eventsService';
+
 interface CalendarWeekViewProps {
     tasks: TaskItemData[];
     onTaskClick: (task: TaskItemData) => void;
     currentDate: Date;
     onDateChange: (date: Date) => void;
+    events?: CalendarEvent[];
+    onEventClick?: (event: CalendarEvent) => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -30,7 +34,7 @@ const STATUS_COLORS: Record<string, string> = {
     done: 'bg-emerald-600',
 };
 
-export function CalendarWeekView({ tasks, onTaskClick, currentDate, onDateChange }: CalendarWeekViewProps) {
+export function CalendarWeekView({ tasks, onTaskClick, currentDate, onDateChange, events = [], onEventClick }: CalendarWeekViewProps) {
     const weekDays = useMemo(() => {
         const start = startOfWeek(currentDate, { weekStartsOn: 1 });
         const end = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -49,9 +53,25 @@ export function CalendarWeekView({ tasks, onTaskClick, currentDate, onDateChange
         return grouped;
     }, [tasks]);
 
+    const eventsByDate = useMemo(() => {
+        const grouped = new Map<string, CalendarEvent[]>();
+        if (!events) return grouped;
+        events.forEach(event => {
+            const dateKey = event.start_time.split('T')[0];
+            if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+            grouped.get(dateKey)!.push(event);
+        });
+        return grouped;
+    }, [events]);
+
     const getTasksForDay = (date: Date) => {
         const dateKey = format(date, 'yyyy-MM-dd');
         return tasksByDate.get(dateKey) || [];
+    };
+
+    const getEventsForDay = (date: Date) => {
+        const dateKey = format(date, 'yyyy-MM-dd');
+        return eventsByDate.get(dateKey) || [];
     };
 
     const weekRange = `${format(weekDays[0], 'MMM d.', { locale: hu })} – ${format(weekDays[6], 'MMM d.', { locale: hu })}`;
@@ -85,6 +105,7 @@ export function CalendarWeekView({ tasks, onTaskClick, currentDate, onDateChange
             <div className="flex-1 grid grid-cols-1 md:grid-cols-7 gap-px bg-slate-800/30 rounded-xl overflow-hidden">
                 {weekDays.map((day) => {
                     const dayTasks = getTasksForDay(day);
+                    const dayEvents = getEventsForDay(day);
                     const today = isToday(day);
 
                     return (
@@ -109,13 +130,34 @@ export function CalendarWeekView({ tasks, onTaskClick, currentDate, onDateChange
                                 )}>
                                     {format(day, 'd')}
                                 </span>
-                                {dayTasks.length > 0 && (
-                                    <span className="text-xs text-slate-500 ml-auto">{dayTasks.length}</span>
+                                {(dayTasks.length + dayEvents.length) > 0 && (
+                                    <span className="text-xs text-slate-500 ml-auto">{dayTasks.length + dayEvents.length}</span>
                                 )}
                             </div>
 
-                            {/* Tasks */}
+                            {/* Items */}
                             <div className="space-y-1.5 flex-1 overflow-y-auto custom-scrollbar">
+                                {/* Events */}
+                                {dayEvents.map((event) => (
+                                    <button
+                                        key={event.id}
+                                        onClick={() => onEventClick?.(event)}
+                                        className="w-full text-left"
+                                    >
+                                        <div
+                                            className="text-xs px-2 py-1.5 rounded-md transition-all hover:shadow-md hover:scale-[1.01] flex items-center gap-1.5 bg-indigo-600/20 border-l-2 border-indigo-500"
+                                        >
+                                            <span className="text-[10px] text-indigo-300 font-mono flex-shrink-0">
+                                                {event.is_all_day ? 'Egész' : event.start_time.split('T')[1].substring(0, 5)}
+                                            </span>
+                                            <span className="truncate text-indigo-100 font-medium">
+                                                {event.title}
+                                            </span>
+                                        </div>
+                                    </button>
+                                ))}
+
+                                {/* Tasks */}
                                 {dayTasks.map((task) => (
                                     <button
                                         key={task.id}

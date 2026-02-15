@@ -10,6 +10,7 @@ import { useWorkspaceStore } from '@/stores';
 import { fetchSubtasks } from '@/lib/subtasksService';
 import { fetchComments } from '@/lib/commentsService';
 import { fetchContacts } from '@/lib/contactsService';
+import { fetchPeople, Person } from '@/lib/peopleService';
 import { TaskDetailsTab } from './TaskDetailsTab';
 import { TaskSubtasksTab, Subtask } from './TaskSubtasksTab';
 import { TaskCommentsTab, Comment } from './TaskCommentsTab';
@@ -28,6 +29,7 @@ export interface TaskData {
     workspace_id?: string;
     project_id?: string | null;
     contact_id?: string | null;
+    assignee_id?: string | null;
 }
 
 interface TaskModalProps {
@@ -57,7 +59,11 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
     const [recurrenceInterval, setRecurrenceInterval] = useState(1);
     const [projectId, setProjectId] = useState('');
     const [contactId, setContactId] = useState('');
+    const [assigneeId, setAssigneeId] = useState('');
+
+    // Data state
     const [workspaceContacts, setWorkspaceContacts] = useState<any[]>([]);
+    const [people, setPeople] = useState<Person[]>([]);
 
     // Tab data
     const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -80,6 +86,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             setRecurrenceInterval(task.recurrence_interval || 1);
             setProjectId(task.project_id || '');
             setContactId(task.contact_id || '');
+            setAssigneeId(task.assignee_id || '');
 
             if (task.id) {
                 fetchSubtasks(task.id)
@@ -97,16 +104,21 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
             setDueDate(''); setFollowUpDate('');
             setRecurrenceType('none'); setRecurrenceInterval(1);
             setRecurrenceType('none'); setRecurrenceInterval(1);
-            setProjectId(''); setContactId(''); setSubtasks([]); setComments([]);
+            setProjectId(''); setContactId(''); setAssigneeId('');
+            setSubtasks([]); setComments([]);
         }
     }, [task]);
 
-    // Load contacts
+    // Load contacts AND people
     useEffect(() => {
         if (effectiveWorkspaceId) {
             fetchContacts(effectiveWorkspaceId)
                 .then(setWorkspaceContacts)
                 .catch(err => console.error('Failed to load contacts:', err));
+
+            fetchPeople(effectiveWorkspaceId)
+                .then(setPeople)
+                .catch(err => console.error('Failed to load people:', err));
         }
     }, [effectiveWorkspaceId]);
 
@@ -129,6 +141,7 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                 recurrence_interval: recurrenceInterval,
                 project_id: projectId || null,
                 contact_id: contactId || null,
+                assignee_id: assigneeId || null,
                 workspace_id: task?.workspace_id || currentWorkspace?.id,
             };
             onSave?.(updatedTask);
@@ -203,6 +216,8 @@ export function TaskModal({ task, isOpen, onClose, onSave, onDelete }: TaskModal
                         workspaceProjects={workspaceProjects}
                         contactId={contactId} setContactId={setContactId}
                         workspaceContacts={workspaceContacts}
+                        assigneeId={assigneeId} setAssigneeId={setAssigneeId}
+                        people={people}
                     />
                 )}
 

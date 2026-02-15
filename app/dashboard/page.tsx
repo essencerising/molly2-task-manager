@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchTasks } from '@/lib/tasksService';
+import { fetchPeople, Person } from '@/lib/peopleService';
 import { isSameDay, addDays, isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 import { hu } from 'date-fns/locale/hu';
 import { toast } from 'sonner';
@@ -29,9 +30,19 @@ type FilterType = 'all' | 'today' | 'followup' | 'overdue';
 export default function DashboardPage() {
   const { dashboardViewMode, setDashboardViewMode, isNewTaskModalOpen, closeNewTaskModal } = useUIStore();
   const currentWorkspaceId = useWorkspaceStore(state => state.currentWorkspaceId);
+
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [people, setPeople] = useState<Person[]>([]);
   const [tasks, setTasks] = useState<TaskItemData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Load people
+  useEffect(() => {
+    if (currentWorkspaceId) {
+      fetchPeople(currentWorkspaceId).then(setPeople);
+    }
+  }, [currentWorkspaceId]);
 
   // Task Modal state
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
@@ -298,6 +309,18 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Assignee Filter */}
+            <select
+              className="bg-slate-900 border border-slate-700 text-slate-300 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
+              value={assigneeFilter}
+              onChange={(e) => setAssigneeFilter(e.target.value)}
+            >
+              <option value="all">Mindenki</option>
+              {people.map(person => (
+                <option key={person.id} value={person.id}>{person.name}</option>
+              ))}
+            </select>
+
             {/* View mode switcher */}
             <div className="flex items-center gap-2">
               {[

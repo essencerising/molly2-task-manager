@@ -4,6 +4,7 @@ export { TaskItem } from './TaskItem';
 export type { TaskItemData } from './TaskItem';
 export { TaskModal } from './TaskModal';
 export { EmptyState, NoTasksEmptyState, NoProjectsEmptyState, NoEventsEmptyState, NoNotesEmptyState } from './EmptyState';
+export { EventModal } from './EventModal';
 export type { EmptyStateProps } from './EmptyState';
 export { KanbanBoard } from './KanbanBoard';
 export { KanbanColumn } from './KanbanColumn';

@@ -1,41 +1,30 @@
-// lib/peopleService.ts
-import { supabase } from './supabaseClient';
-import type { Person } from '@/types/people';
+import { fetchWorkspaceMembers } from './workspaceService';
+import type { WorkspaceMember } from '@/types/workspace';
 
-export async function getPeopleByArea(area: string): Promise<Person[]> {
-  const { data, error } = await supabase
-    .from('people')
-    .select('*')
-    .or(`area.eq.${area},area.is.null`)
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('getPeopleByArea error', error);
-    throw error;
-  }
-
-  return data ?? [];
+export interface Person {
+  id: string; // User ID
+  name: string;
+  email: string;
+  avatar_url: string | null;
+  role: string;
 }
 
-export async function createPerson(input: {
-  name: string;
-  email?: string;
-  area?: string;
-}): Promise<Person> {
-  const { data, error } = await supabase
-    .from('people')
-    .insert({
-      name: input.name,
-      email: input.email ?? null,
-      area: input.area ?? null,
-    })
-    .select('*')
-    .single();
+export async function fetchPeople(workspaceId: string): Promise<Person[]> {
+  if (!workspaceId) return [];
 
-  if (error) {
-    console.error('createPerson error', error);
-    throw error;
+  try {
+    const members = await fetchWorkspaceMembers(workspaceId);
+
+    // Transform WorkspaceMember to Person format for easier UI consumption
+    return members.map(member => ({
+      id: member.user_id,
+      name: member.user?.full_name || member.user?.email || 'Névtelen',
+      email: member.user?.email || '',
+      avatar_url: member.user?.avatar_url || null,
+      role: member.role
+    }));
+  } catch (error) {
+    console.error('Error fetching people:', error);
+    return [];
   }
-
-  return data as Person;
 }

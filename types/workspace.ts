@@ -25,7 +25,7 @@ export interface WorkspaceMember {
     user?: {
         id: string;
         email: string;
-        name: string | null;
+        full_name: string | null;
         avatar_url: string | null;
     };
 }

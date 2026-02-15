@@ -1,13 +1,5 @@
 import { fetchWorkspaceMembers } from './workspaceService';
-import type { WorkspaceMember } from '@/types/workspace';
-
-export interface Person {
-  id: string; // User ID
-  name: string;
-  email: string;
-  avatar_url: string | null;
-  role: string;
-}
+import type { Person } from '@/types/people';
 
 export async function fetchPeople(workspaceId: string): Promise<Person[]> {
   if (!workspaceId) return [];
@@ -21,7 +13,8 @@ export async function fetchPeople(workspaceId: string): Promise<Person[]> {
       name: member.user?.full_name || member.user?.email || 'Névtelen',
       email: member.user?.email || '',
       avatar_url: member.user?.avatar_url || null,
-      role: member.role
+      role: member.role,
+      // Legacy fields to satisfy type if needed, or left undefined since they are optional now
     }));
   } catch (error) {
     console.error('Error fetching people:', error);
